@@ -16,8 +16,14 @@ serve(async (req) => {
   try {
     const { galleryId, clientEmail, extraPhotosCount } = await req.json();
 
+    console.log('Payment request received:', { galleryId, clientEmail, extraPhotosCount });
+
     if (!galleryId || !clientEmail || !extraPhotosCount) {
-      throw new Error("Missing required fields");
+      throw new Error("Missing required fields: galleryId, clientEmail, or extraPhotosCount");
+    }
+
+    if (extraPhotosCount <= 0) {
+      throw new Error("Extra photos count must be greater than 0");
     }
 
     // Initialize Supabase client with service role key
@@ -27,17 +33,34 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Get price per extra photo from settings
+    // Get price per extra photo from settings (in cents)
     const { data: priceData, error: priceError } = await supabaseClient
       .from('app_settings')
       .select('value')
       .eq('key', 'price_per_extra_photo_cents')
       .single();
 
-    if (priceError) throw new Error("Failed to get pricing");
+    if (priceError) {
+      console.error('Failed to get pricing:', priceError);
+      throw new Error("Failed to get pricing information");
+    }
     
     const pricePerPhotoCents = parseInt(priceData.value);
     const totalAmount = extraPhotosCount * pricePerPhotoCents;
+
+    console.log('Pricing info:', { pricePerPhotoCents, totalAmount });
+
+    // Verify gallery exists
+    const { data: galleryData, error: galleryError } = await supabaseClient
+      .from('galleries')
+      .select('id, name')
+      .eq('id', galleryId)
+      .single();
+
+    if (galleryError) {
+      console.error('Gallery not found:', galleryError);
+      throw new Error("Gallery not found");
+    }
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -53,7 +76,7 @@ serve(async (req) => {
             currency: "eur",
             product_data: {
               name: `${extraPhotosCount} Extra Photo${extraPhotosCount > 1 ? 's' : ''}`,
-              description: `Additional photo selections beyond the free limit`,
+              description: `Additional photo selections for gallery: ${galleryData.name}`,
             },
             unit_amount: pricePerPhotoCents,
           },
@@ -71,7 +94,7 @@ serve(async (req) => {
     });
 
     // Save payment session to database
-    await supabaseClient.from('payment_sessions').insert({
+    const { error: insertError } = await supabaseClient.from('payment_sessions').insert({
       gallery_id: galleryId,
       client_email: clientEmail,
       stripe_session_id: session.id,
@@ -80,13 +103,21 @@ serve(async (req) => {
       status: 'pending',
     });
 
+    if (insertError) {
+      console.error('Failed to save payment session:', insertError);
+      throw new Error("Failed to save payment session");
+    }
+
+    console.log('Payment session created successfully:', session.id);
+
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error('Payment creation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Payment creation error:', errorMessage);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

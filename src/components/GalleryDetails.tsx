@@ -1,10 +1,22 @@
-import React from 'react';
-import { Upload } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { Upload, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PhotoGrid from './PhotoGrid';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Gallery {
   id: string;
@@ -45,6 +57,7 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
   onGalleryDeleted
 }) => {
   const { toast } = useToast();
+  const [isDeletingGallery, setIsDeletingGallery] = useState(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -120,13 +133,68 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
     }
   };
 
+  const deleteGallery = async () => {
+    setIsDeletingGallery(true);
+    
+    try {
+      // First, get all photos in the gallery to delete from storage
+      const { data: photosData, error: photosError } = await supabase
+        .from('photos')
+        .select('storage_path')
+        .eq('gallery_id', gallery.id);
+
+      if (photosError) throw photosError;
+
+      // Delete photos from storage
+      if (photosData && photosData.length > 0) {
+        const filePaths = photosData.map(photo => photo.storage_path);
+        const { error: storageError } = await supabase.storage
+          .from('gallery-photos')
+          .remove(filePaths);
+
+        if (storageError) throw storageError;
+      }
+
+      // Delete the gallery (this will cascade delete photos and selections due to foreign key constraints)
+      const { error: galleryError } = await supabase
+        .from('galleries')
+        .delete()
+        .eq('id', gallery.id);
+
+      if (galleryError) throw galleryError;
+
+      toast({
+        title: "Gallery deleted",
+        description: `Gallery "${gallery.name}" and all its photos have been deleted.`,
+      });
+
+      onGalleryDeleted();
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete gallery",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeletingGallery(false);
+    }
+  };
+
   return (
-    <Card className="p-6 bg-white/5 border-white/10">
-      <div className="flex justify-between items-center mb-6">
+    <Card className="p-6">
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-xl font-semibold">{gallery.name}</h2>
-          <p className="text-slate-400">{photos.length} photos</p>
-          <p className="text-sm text-blue-300">Access Code: {gallery.access_code}</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{gallery.name}</h2>
+          <div className="space-y-1">
+            <p className="text-gray-600">{photos.length} photos</p>
+            {gallery.client_name && (
+              <p className="text-gray-600">Client: {gallery.client_name}</p>
+            )}
+            {gallery.client_email && (
+              <p className="text-gray-600">Email: {gallery.client_email}</p>
+            )}
+            <p className="text-sm text-blue-600">Access Code: {gallery.access_code}</p>
+          </div>
         </div>
         
         <div className="flex gap-3">
@@ -140,13 +208,44 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
           />
           <Button
             asChild
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-blue-600 hover:bg-blue-700"
           >
             <label htmlFor="photo-upload" className="cursor-pointer">
               <Upload className="w-4 h-4 mr-2" />
               Upload Photos
             </label>
           </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="default">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Gallery
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Gallery</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the gallery "{gallery.name}" and all its photos? 
+                  This action cannot be undone and will permanently delete:
+                  <br />• {photos.length} photos
+                  <br />• All photo selections
+                  <br />• All payment records
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={deleteGallery}
+                  disabled={isDeletingGallery}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isDeletingGallery ? "Deleting..." : "Delete Gallery"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
