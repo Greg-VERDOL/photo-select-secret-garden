@@ -33,20 +33,20 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChange }) =
 
   return (
     <Sidebar className="border-r border-slate-700">
-      <SidebarContent className="bg-slate-800 px-8 py-8">
+      <SidebarContent className="bg-slate-800 px-6 py-8">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-300 mb-6 text-base">Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-300 mb-6 text-lg font-medium">Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-4">
+            <SidebarMenu className="space-y-3">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton 
                     isActive={activeTab === item.value}
                     onClick={() => onTabChange(item.value)}
-                    className="text-slate-300 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:text-white px-6 py-4 rounded-lg transition-colors text-base"
+                    className="text-slate-300 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:text-white px-4 py-3 rounded-xl transition-all duration-200 text-base font-medium w-full"
                   >
-                    <item.icon className="w-5 h-5 mr-4" />
-                    <span>{item.title}</span>
+                    <item.icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <span className="truncate">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

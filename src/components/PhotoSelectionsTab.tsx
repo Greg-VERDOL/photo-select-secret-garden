@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Image, Calendar, User, Download, Eye } from 'lucide-react';
+import { Heart, Download, Eye, User, Calendar, Image as ImageIcon } from 'lucide-react';
 import PhotoSelectionModal from './PhotoSelectionModal';
 
 interface PhotoSelection {
@@ -107,7 +106,6 @@ const PhotoSelectionsTab: React.FC = () => {
     setDownloadingClient(clientSelections.clientName);
     
     try {
-      // Create a zip file with all selected photos
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
       
@@ -150,91 +148,110 @@ const PhotoSelectionsTab: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-white">Loading photo selections...</div>
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading selections...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Photo Selections</h2>
-        <p className="text-slate-400">View and download photos selected by your clients</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center py-8">
+        <h2 className="text-4xl font-light text-white mb-3">Photo Selections</h2>
+        <p className="text-slate-400 text-lg">Beautifully curated by your clients</p>
       </div>
 
       {groupedSelections.length === 0 ? (
-        <Card className="p-12 bg-white/5 border-white/10 text-center">
-          <Heart className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-          <h3 className="text-xl font-semibold mb-2 text-white">No Selections Yet</h3>
-          <p className="text-slate-400">Client photo selections will appear here when they make their choices</p>
-        </Card>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center max-w-md">
+            <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Heart className="w-12 h-12 text-slate-400" />
+            </div>
+            <h3 className="text-2xl font-light mb-3 text-white">No Selections Yet</h3>
+            <p className="text-slate-400 text-lg leading-relaxed">
+              Client photo selections will appear here when they make their choices
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="space-y-8">
           {groupedSelections.map((clientGroup, index) => (
-            <Card key={index} className="p-6 bg-white/5 border-white/10">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    {clientGroup.clientName}
-                  </h3>
-                  <p className="text-slate-400">{clientGroup.clientEmail}</p>
-                  <p className="text-sm text-blue-300">Gallery: {clientGroup.galleryName}</p>
-                  <p className="text-sm text-slate-500">{clientGroup.selections.length} photos selected</p>
+            <Card key={index} className="bg-white/3 border-white/10 backdrop-blur-xl rounded-2xl overflow-hidden">
+              {/* Client Header */}
+              <div className="p-8 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-medium text-white mb-1">{clientGroup.clientName}</h3>
+                      <p className="text-slate-400 mb-1">{clientGroup.clientEmail}</p>
+                      <div className="flex items-center space-x-4 text-sm text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <ImageIcon className="w-4 h-4" />
+                          <span>{clientGroup.galleryName}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Heart className="w-4 h-4" />
+                          <span>{clientGroup.selections.length} selected</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    onClick={() => downloadClientSelections(clientGroup)}
+                    disabled={downloadingClient === clientGroup.clientName}
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {downloadingClient === clientGroup.clientName ? 'Preparing...' : 'Download All'}
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => downloadClientSelections(clientGroup)}
-                  disabled={downloadingClient === clientGroup.clientName}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {downloadingClient === clientGroup.clientName ? 'Downloading...' : 'Download All'}
-                </Button>
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-700">
-                    <TableHead className="text-slate-300">Photo</TableHead>
-                    <TableHead className="text-slate-300">Title</TableHead>
-                    <TableHead className="text-slate-300">Selected Date</TableHead>
-                    <TableHead className="text-slate-300">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {/* Photos Grid */}
+              <div className="p-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                   {clientGroup.selections.map((selection) => (
-                    <TableRow key={selection.id} className="border-slate-700">
-                      <TableCell>
-                        <div className="w-16 h-16 rounded-lg overflow-hidden">
-                          <img
-                            src={getPhotoUrl(selection.photo.storage_path)}
-                            alt={selection.photo.title || selection.photo.filename}
-                            className="w-full h-full object-cover"
-                          />
+                    <div
+                      key={selection.id}
+                      className="group relative aspect-square rounded-xl overflow-hidden bg-slate-800 cursor-pointer hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
+                      onClick={() => setSelectedPhoto(selection)}
+                    >
+                      <img
+                        src={getPhotoUrl(selection.photo.storage_path)}
+                        alt={selection.photo.title || selection.photo.filename}
+                        className="w-full h-full object-cover"
+                      />
+                      
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-white" />
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-white">
-                        {selection.photo.title || selection.photo.filename}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {new Date(selection.selected_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedPhoto(selection)}
-                          className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+
+                      {/* Selection Date Badge */}
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-white">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(selection.selected_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </div>
             </Card>
           ))}
         </div>
