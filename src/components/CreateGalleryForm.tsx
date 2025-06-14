@@ -1,22 +1,23 @@
 
 import React, { useState } from 'react';
-import { FolderPlus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CreateGalleryFormProps {
   onGalleryCreated: () => void;
+  onCancel?: () => void;
 }
 
-const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated }) => {
+const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated, onCancel }) => {
   const [newGalleryData, setNewGalleryData] = useState({
     name: '',
     clientName: '',
     clientEmail: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const createNewGallery = async () => {
@@ -29,6 +30,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated 
       return;
     }
 
+    setIsLoading(true);
     try {
       const { data: codeData, error: codeError } = await supabase
         .rpc('generate_access_code');
@@ -61,37 +63,83 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated 
         description: "Failed to create new gallery",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card className="p-6 bg-white/5 border-white/10">
-      <h2 className="text-xl font-semibold mb-4">Create New Gallery</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input
-          value={newGalleryData.name}
-          onChange={(e) => setNewGalleryData({ ...newGalleryData, name: e.target.value })}
-          placeholder="Gallery name (e.g., Wedding - Johnson Family)"
-          className="bg-slate-700 border-slate-600 text-white"
-        />
-        <Input
-          value={newGalleryData.clientName}
-          onChange={(e) => setNewGalleryData({ ...newGalleryData, clientName: e.target.value })}
-          placeholder="Client name (optional)"
-          className="bg-slate-700 border-slate-600 text-white"
-        />
-        <Input
-          value={newGalleryData.clientEmail}
-          onChange={(e) => setNewGalleryData({ ...newGalleryData, clientEmail: e.target.value })}
-          placeholder="Client email (optional)"
-          className="bg-slate-700 border-slate-600 text-white"
-        />
+    <div>
+      {onCancel && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 p-1"
+          onClick={onCancel}
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      )}
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gallery Name *
+          </label>
+          <Input
+            value={newGalleryData.name}
+            onChange={(e) => setNewGalleryData({ ...newGalleryData, name: e.target.value })}
+            placeholder="Wedding - Johnson Family"
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Client Name
+          </label>
+          <Input
+            value={newGalleryData.clientName}
+            onChange={(e) => setNewGalleryData({ ...newGalleryData, clientName: e.target.value })}
+            placeholder="John & Jane Johnson"
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Client Email
+          </label>
+          <Input
+            type="email"
+            value={newGalleryData.clientEmail}
+            onChange={(e) => setNewGalleryData({ ...newGalleryData, clientEmail: e.target.value })}
+            placeholder="client@example.com"
+            className="w-full"
+          />
+        </div>
       </div>
-      <Button onClick={createNewGallery} className="mt-4 bg-blue-600 hover:bg-blue-700">
-        <FolderPlus className="w-4 h-4 mr-2" />
-        Create Gallery
-      </Button>
-    </Card>
+      
+      <div className="flex gap-3 mt-6">
+        {onCancel && (
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1"
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        )}
+        <Button
+          onClick={createNewGallery}
+          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Creating...' : 'Create Gallery'}
+        </Button>
+      </div>
+    </div>
   );
 };
 
