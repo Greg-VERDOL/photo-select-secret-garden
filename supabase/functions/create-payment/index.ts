@@ -18,11 +18,15 @@ serve(async (req) => {
 
     console.log('Payment request received:', { galleryId, clientEmail, extraPhotosCount });
 
-    if (!galleryId || !clientEmail || !extraPhotosCount) {
-      throw new Error("Missing required fields: galleryId, clientEmail, or extraPhotosCount");
+    if (!galleryId) {
+      throw new Error("Gallery ID is required");
     }
 
-    if (extraPhotosCount <= 0) {
+    if (!clientEmail || clientEmail.trim() === "") {
+      throw new Error("Client email is required");
+    }
+
+    if (!extraPhotosCount || extraPhotosCount <= 0) {
       throw new Error("Extra photos count must be greater than 0");
     }
 
@@ -69,7 +73,7 @@ serve(async (req) => {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer_email: clientEmail,
+      customer_email: clientEmail.trim(),
       line_items: [
         {
           price_data: {
@@ -88,7 +92,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/gallery/payment-cancelled`,
       metadata: {
         gallery_id: galleryId,
-        client_email: clientEmail,
+        client_email: clientEmail.trim(),
         extra_photos_count: extraPhotosCount.toString(),
       },
     });
@@ -96,7 +100,7 @@ serve(async (req) => {
     // Save payment session to database
     const { error: insertError } = await supabaseClient.from('payment_sessions').insert({
       gallery_id: galleryId,
-      client_email: clientEmail,
+      client_email: clientEmail.trim(),
       stripe_session_id: session.id,
       extra_photos_count: extraPhotosCount,
       amount_cents: totalAmount,
