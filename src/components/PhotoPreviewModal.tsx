@@ -42,8 +42,8 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-800 border-slate-600 text-white overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[95vh] bg-slate-800 border-slate-600 text-white overflow-hidden p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex justify-between items-center">
             <span>{photo.title || photo.filename}</span>
             <div className="flex gap-2">
@@ -69,12 +69,12 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-col items-center space-y-4">
-          <div className="max-w-full max-h-[60vh] overflow-hidden rounded-lg">
+        <div className="flex flex-col items-center space-y-4 p-6 pt-0">
+          <div className="w-full flex justify-center">
             <WatermarkedImage
               src={getPhotoUrl(photo.storage_path)}
               alt={photo.title || photo.filename}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-[70vh] object-contain rounded-lg"
             />
           </div>
           
