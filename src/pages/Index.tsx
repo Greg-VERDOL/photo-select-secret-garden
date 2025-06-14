@@ -7,6 +7,8 @@ import ClientGallery from '@/components/ClientGallery';
 import AdminDashboard from '@/components/AdminDashboard';
 import AdminLogin from '@/components/AdminLogin';
 import ClientAccessForm from '@/components/ClientAccessForm';
+import PaymentSuccess from '@/components/PaymentSuccess';
+import PaymentCancelled from '@/components/PaymentCancelled';
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -40,6 +42,8 @@ const Index = () => {
       <Routes>
         <Route path="/" element={<ClientAccessForm />} />
         <Route path="/gallery/:accessCode" element={<ClientGallery />} />
+        <Route path="/gallery/payment-success" element={<PaymentSuccess />} />
+        <Route path="/gallery/payment-cancelled" element={<PaymentCancelled />} />
         <Route 
           path="/admin" 
           element={

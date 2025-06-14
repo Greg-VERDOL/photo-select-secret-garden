@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Mail, Heart } from 'lucide-react';
+import { X, Mail, Heart, CreditCard, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +17,12 @@ interface Photo {
   title?: string;
   description?: string;
   filename: string;
+}
+
+interface Gallery {
+  id: string;
+  name: string;
+  free_photo_limit: number;
 }
 
 interface SelectionModalProps {
@@ -40,9 +46,46 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gallery, setGallery] = useState<Gallery | null>(null);
+  const [pricePerPhoto, setPricePerPhoto] = useState(0);
   const { toast } = useToast();
 
   const selectedPhotosList = photos.filter(photo => selectedPhotos.has(photo.id));
+  const freeLimit = gallery?.free_photo_limit || 5;
+  const extraPhotos = Math.max(0, selectedPhotos.size - freeLimit);
+  const totalCost = extraPhotos * pricePerPhoto;
+
+  useEffect(() => {
+    if (isOpen && galleryId) {
+      fetchGalleryAndPricing();
+    }
+  }, [isOpen, galleryId]);
+
+  const fetchGalleryAndPricing = async () => {
+    try {
+      // Fetch gallery info
+      const { data: galleryData, error: galleryError } = await supabase
+        .from('galleries')
+        .select('id, name, free_photo_limit')
+        .eq('id', galleryId)
+        .single();
+
+      if (galleryError) throw galleryError;
+      setGallery(galleryData);
+
+      // Fetch price per photo
+      const { data: priceData, error: priceError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'price_per_extra_photo_cents')
+        .single();
+
+      if (priceError) throw priceError;
+      setPricePerPhoto(parseInt(priceData.value) / 100);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,52 +102,68 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Save photo selections to database
-      const selections = Array.from(selectedPhotos).map(photoId => ({
-        gallery_id: galleryId,
-        photo_id: photoId,
-        client_email: clientInfo.email
-      }));
-
-      const { error } = await supabase
-        .from('photo_selections')
-        .upsert(selections, { 
-          onConflict: 'gallery_id,photo_id',
-          ignoreDuplicates: false 
+      // If extra photos need payment, redirect to Stripe
+      if (extraPhotos > 0) {
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: {
+            galleryId,
+            clientEmail: clientInfo.email,
+            extraPhotosCount: extraPhotos
+          }
         });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Here you would typically send an email notification to the admin
-      // For now, we'll just show a success message
-      const emailData = {
-        clientName: clientInfo.name,
-        clientEmail: clientInfo.email,
-        message: message,
-        galleryId: galleryId,
-        selectedPhotos: selectedPhotosList.map(photo => ({
-          id: photo.id,
-          title: photo.title || photo.filename,
-          filename: photo.filename
-        })),
-        timestamp: new Date().toISOString()
-      };
+        // Store selections temporarily (we'll complete after payment)
+        const selections = Array.from(selectedPhotos).map(photoId => ({
+          gallery_id: galleryId,
+          photo_id: photoId,
+          client_email: clientInfo.email
+        }));
 
-      console.log('Photo selection data saved:', emailData);
+        // Store in localStorage to complete after payment
+        localStorage.setItem('pendingSelections', JSON.stringify({
+          selections,
+          clientInfo,
+          message
+        }));
 
-      toast({
-        title: "Selection sent successfully!",
-        description: "We've received your photo selection and will be in touch soon.",
-      });
+        // Redirect to Stripe
+        window.open(data.url, '_blank');
+        
+        toast({
+          title: "Redirecting to payment",
+          description: "Complete your payment to finalize your selection.",
+        });
+      } else {
+        // No payment needed, save selections directly
+        const selections = Array.from(selectedPhotos).map(photoId => ({
+          gallery_id: galleryId,
+          photo_id: photoId,
+          client_email: clientInfo.email
+        }));
 
-      onClose();
-      // Reset form
-      setMessage('');
-      
+        const { error } = await supabase
+          .from('photo_selections')
+          .upsert(selections, { 
+            onConflict: 'gallery_id,photo_id',
+            ignoreDuplicates: false 
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Selection sent successfully!",
+          description: "We've received your photo selection and will be in touch soon.",
+        });
+
+        onClose();
+        setMessage('');
+      }
     } catch (error) {
-      console.error('Error saving selection:', error);
+      console.error('Error processing selection:', error);
       toast({
-        title: "Error sending selection",
+        title: "Error processing selection",
         description: "Please try again or contact us directly.",
         variant: "destructive"
       });
@@ -128,6 +187,11 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           <div>
             <h2 className="text-2xl font-bold text-white">Send Your Selection</h2>
             <p className="text-slate-300 mt-1">{selectedPhotos.size} photos selected</p>
+            {freeLimit > 0 && (
+              <p className="text-sm text-slate-400">
+                {Math.min(selectedPhotos.size, freeLimit)} free • {extraPhotos} extra photos
+              </p>
+            )}
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-6 h-6" />
@@ -135,6 +199,29 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {/* Payment Summary */}
+          {extraPhotos > 0 && (
+            <Card className="bg-blue-900/20 border-blue-400/30 p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CreditCard className="w-5 h-5 text-blue-400" />
+                  <div>
+                    <h3 className="font-semibold text-white">Payment Required</h3>
+                    <p className="text-sm text-slate-300">
+                      {extraPhotos} extra photo{extraPhotos > 1 ? 's' : ''} × ${pricePerPhoto.toFixed(2)} each
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center text-xl font-bold text-white">
+                    <DollarSign className="w-5 h-5" />
+                    {totalCost.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Selected Photos Preview */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
@@ -142,8 +229,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
               Selected Photos
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {selectedPhotosList.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden bg-slate-700 border-slate-600">
+              {selectedPhotosList.map((photo, index) => (
+                <Card key={photo.id} className="overflow-hidden bg-slate-700 border-slate-600 relative">
                   <WatermarkedImage
                     src={photo.thumbnail || photo.url || ''}
                     alt={photo.title || photo.filename}
@@ -152,6 +239,11 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
                   <div className="p-2">
                     <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
                   </div>
+                  {index >= freeLimit && (
+                    <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                      ${pricePerPhoto.toFixed(2)}
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -213,10 +305,10 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className={`${extraPhotos > 0 ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'}`}
               >
-                <Mail className="w-4 h-4 mr-2" />
-                {isSubmitting ? 'Sending...' : 'Send Selection'}
+                {extraPhotos > 0 ? <CreditCard className="w-4 h-4 mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                {isSubmitting ? 'Processing...' : extraPhotos > 0 ? `Pay $${totalCost.toFixed(2)}` : 'Send Selection'}
               </Button>
             </div>
           </form>

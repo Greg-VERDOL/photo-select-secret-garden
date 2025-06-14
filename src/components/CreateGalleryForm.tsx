@@ -15,7 +15,8 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
   const [newGalleryData, setNewGalleryData] = useState({
     name: '',
     clientName: '',
-    clientEmail: ''
+    clientEmail: '',
+    freePhotoLimit: 5
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -25,6 +26,15 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
       toast({
         title: "Gallery name required",
         description: "Please enter a name for the new gallery.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newGalleryData.freePhotoLimit < 0) {
+      toast({
+        title: "Invalid free photo limit",
+        description: "Free photo limit must be 0 or greater.",
         variant: "destructive"
       });
       return;
@@ -43,7 +53,8 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
           name: newGalleryData.name,
           client_name: newGalleryData.clientName || null,
           client_email: newGalleryData.clientEmail || null,
-          access_code: codeData
+          access_code: codeData,
+          free_photo_limit: newGalleryData.freePhotoLimit
         })
         .select()
         .single();
@@ -52,10 +63,10 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
 
       toast({
         title: "Gallery created",
-        description: `Created new gallery with access code: ${data.access_code}`,
+        description: `Created new gallery with access code: ${data.access_code} and ${newGalleryData.freePhotoLimit} free photos`,
       });
 
-      setNewGalleryData({ name: '', clientName: '', clientEmail: '' });
+      setNewGalleryData({ name: '', clientName: '', clientEmail: '', freePhotoLimit: 5 });
       onGalleryCreated();
     } catch (error) {
       toast({
@@ -117,6 +128,23 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             placeholder="client@example.com"
             className="w-full"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Free Photo Limit
+          </label>
+          <Input
+            type="number"
+            min="0"
+            value={newGalleryData.freePhotoLimit}
+            onChange={(e) => setNewGalleryData({ ...newGalleryData, freePhotoLimit: parseInt(e.target.value) || 0 })}
+            placeholder="5"
+            className="w-full"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Number of photos the client can select for free. They'll pay for additional selections.
+          </p>
         </div>
       </div>
       
