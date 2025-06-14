@@ -145,6 +145,58 @@ const GalleriesTab: React.FC = () => {
     }
   };
 
+  const deleteGallery = async (galleryId: string, galleryName: string) => {
+    if (!window.confirm(`Are you sure you want to delete the gallery "${galleryName}" and all its photos? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // First, get all photos in the gallery to delete from storage
+      const { data: photosData, error: photosError } = await supabase
+        .from('photos')
+        .select('storage_path')
+        .eq('gallery_id', galleryId);
+
+      if (photosError) throw photosError;
+
+      // Delete photos from storage
+      if (photosData && photosData.length > 0) {
+        const filePaths = photosData.map(photo => photo.storage_path);
+        const { error: storageError } = await supabase.storage
+          .from('gallery-photos')
+          .remove(filePaths);
+
+        if (storageError) throw storageError;
+      }
+
+      // Delete the gallery (this will cascade delete photos and selections due to foreign key constraints)
+      const { error: galleryError } = await supabase
+        .from('galleries')
+        .delete()
+        .eq('id', galleryId);
+
+      if (galleryError) throw galleryError;
+
+      toast({
+        title: "Gallery deleted",
+        description: `Gallery "${galleryName}" and all its photos have been deleted.`,
+      });
+
+      if (selectedGallery?.id === galleryId) {
+        setSelectedGallery(null);
+        setPhotos([]);
+      }
+
+      fetchGalleries();
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete gallery",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || !selectedGallery) return;
@@ -246,6 +298,21 @@ const GalleriesTab: React.FC = () => {
     setIsPreviewOpen(false);
   };
 
+  const navigatePhoto = (direction: 'prev' | 'next') => {
+    if (!selectedPhoto) return;
+    
+    const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
+    let newIndex;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
+    } else {
+      newIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setSelectedPhoto(photos[newIndex]);
+  };
+
   return (
     <div className="space-y-6">
       {/* Create New Gallery */}
@@ -283,7 +350,7 @@ const GalleriesTab: React.FC = () => {
         <div className="lg:col-span-1">
           <Card className="p-6 bg-white/5 border-white/10">
             <h2 className="text-xl font-semibold mb-4">Your Galleries ({galleries.length})</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
               {galleries.map((gallery) => (
                 <motion.div
                   key={gallery.id}
@@ -314,6 +381,16 @@ const GalleriesTab: React.FC = () => {
                     >
                       <Copy className="w-3 h-3 mr-1" />
                       {gallery.access_code}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteGallery(gallery.id, gallery.name);
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 </motion.div>
@@ -355,7 +432,7 @@ const GalleriesTab: React.FC = () => {
               </div>
 
               {/* Photos Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto scrollbar-hide">
                 {photos.map((photo) => (
                   <motion.div
                     key={photo.id}
@@ -363,7 +440,7 @@ const GalleriesTab: React.FC = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="group relative"
                   >
-                    <Card className="overflow-hidden bg-slate-700 border-slate-600 cursor-pointer">
+                    <Card className="overflow-hidden bg-slate-700 border-slate-600 cursor-pointer hover:scale-105 transition-transform">
                       <div onClick={() => openPhotoPreview(photo)}>
                         <WatermarkedImage
                           src={getPhotoUrl(photo.storage_path)}
@@ -424,6 +501,8 @@ const GalleriesTab: React.FC = () => {
         onClose={closePhotoPreview}
         onDelete={deletePhoto}
         getPhotoUrl={getPhotoUrl}
+        photos={photos}
+        onNavigate={navigatePhoto}
       />
     </div>
   );

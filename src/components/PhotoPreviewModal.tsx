@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import WatermarkedImage from './WatermarkedImage';
 
 interface Photo {
@@ -22,6 +22,8 @@ interface PhotoPreviewModalProps {
   onClose: () => void;
   onDelete?: (photoId: string, storagePath: string) => void;
   getPhotoUrl: (storagePath: string) => string;
+  photos?: Photo[];
+  onNavigate?: (direction: 'prev' | 'next') => void;
 }
 
 const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
@@ -29,8 +31,32 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
   isOpen,
   onClose,
   onDelete,
-  getPhotoUrl
+  getPhotoUrl,
+  photos = [],
+  onNavigate
 }) => {
+  const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
+    if (!isOpen || !onNavigate) return;
+    
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      onNavigate('prev');
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      onNavigate('next');
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  }, [isOpen, onNavigate, onClose]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyNavigation);
+    return () => {
+      document.removeEventListener('keydown', handleKeyNavigation);
+    };
+  }, [handleKeyNavigation]);
+
   if (!photo) return null;
 
   const handleDelete = () => {
@@ -39,6 +65,10 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
       onClose();
     }
   };
+
+  const currentIndex = photos.findIndex(p => p.id === photo.id);
+  const canNavigatePrev = currentIndex > 0;
+  const canNavigateNext = currentIndex < photos.length - 1;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -69,7 +99,30 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-col items-center space-y-4 p-6 pt-0">
+        <div className="flex flex-col items-center space-y-4 p-6 pt-0 relative">
+          {/* Navigation arrows */}
+          {onNavigate && canNavigatePrev && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 border-slate-600 text-slate-300 hover:bg-slate-700 z-10"
+              onClick={() => onNavigate('prev')}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          )}
+          
+          {onNavigate && canNavigateNext && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 border-slate-600 text-slate-300 hover:bg-slate-700 z-10"
+              onClick={() => onNavigate('next')}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          )}
+
           <div className="w-full flex justify-center">
             <WatermarkedImage
               src={getPhotoUrl(photo.storage_path)}
@@ -87,6 +140,9 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
           <div className="text-slate-400 text-xs text-center">
             <p>Uploaded: {new Date(photo.created_at).toLocaleDateString()}</p>
             <p>Filename: {photo.filename}</p>
+            {photos.length > 1 && (
+              <p>Photo {currentIndex + 1} of {photos.length}</p>
+            )}
           </div>
         </div>
       </DialogContent>

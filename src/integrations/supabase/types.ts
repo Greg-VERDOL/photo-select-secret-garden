@@ -9,10 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          access_code: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          access_code: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       galleries: {
         Row: {
           access_code: string
           client_email: string | null
+          client_id: string | null
           client_name: string | null
           created_at: string
           id: string
@@ -22,6 +50,7 @@ export type Database = {
         Insert: {
           access_code: string
           client_email?: string | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           id?: string
@@ -31,13 +60,22 @@ export type Database = {
         Update: {
           access_code?: string
           client_email?: string | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "galleries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       photo_selections: {
         Row: {
