@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +33,7 @@ interface GalleryDetailsProps {
   onPhotoUploaded: () => void;
   onPhotoClick: (photo: Photo) => void;
   getPhotoUrl: (storagePath: string) => string;
+  onGalleryDeleted: () => void;
 }
 
 const GalleryDetails: React.FC<GalleryDetailsProps> = ({
@@ -41,7 +41,8 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
   photos,
   onPhotoUploaded,
   onPhotoClick,
-  getPhotoUrl
+  getPhotoUrl,
+  onGalleryDeleted
 }) => {
   const { toast } = useToast();
 
