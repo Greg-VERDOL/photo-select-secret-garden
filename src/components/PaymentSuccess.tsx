@@ -19,9 +19,47 @@ const PaymentSuccess: React.FC = () => {
     if (sessionId) {
       verifyPaymentAndCompleteSelection(sessionId);
     } else {
-      setLoading(false);
+      // Check if there are pending selections to complete
+      completePendingSelections();
     }
   }, [searchParams]);
+
+  const completePendingSelections = async () => {
+    try {
+      const pendingData = localStorage.getItem('pendingSelections');
+      if (pendingData) {
+        const { selections } = JSON.parse(pendingData);
+        
+        console.log('Completing pending selections:', selections);
+        
+        const { error } = await supabase
+          .from('photo_selections')
+          .upsert(selections, { 
+            onConflict: 'gallery_id,photo_id',
+            ignoreDuplicates: false 
+          });
+
+        if (error) throw error;
+
+        // Clear pending data
+        localStorage.removeItem('pendingSelections');
+
+        toast({
+          title: "Selections saved!",
+          description: "Your photo selections have been completed.",
+        });
+      }
+    } catch (error) {
+      console.error('Error completing pending selections:', error);
+      toast({
+        title: "Error saving selections",
+        description: "Please contact us if your selections weren't processed.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const verifyPaymentAndCompleteSelection = async (sessionId: string) => {
     try {
@@ -36,27 +74,7 @@ const PaymentSuccess: React.FC = () => {
 
       // Complete the photo selections if payment was successful
       if (paymentData.status === 'completed') {
-        const pendingData = localStorage.getItem('pendingSelections');
-        if (pendingData) {
-          const { selections } = JSON.parse(pendingData);
-          
-          const { error: selectionsError } = await supabase
-            .from('photo_selections')
-            .upsert(selections, { 
-              onConflict: 'gallery_id,photo_id',
-              ignoreDuplicates: false 
-            });
-
-          if (selectionsError) throw selectionsError;
-
-          // Clear pending data
-          localStorage.removeItem('pendingSelections');
-
-          toast({
-            title: "Payment successful!",
-            description: "Your photo selection has been completed.",
-          });
-        }
+        await completePendingSelections();
       }
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -75,7 +93,7 @@ const PaymentSuccess: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Verifying your payment...</p>
+          <p className="text-white">Processing your selection...</p>
         </div>
       </div>
     );
@@ -88,17 +106,22 @@ const PaymentSuccess: React.FC = () => {
           <CheckCircle className="w-8 h-8 text-white" />
         </div>
         
-        <h1 className="text-2xl font-bold text-white mb-4">Payment Successful!</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">
+          {paymentDetails ? 'Payment Successful!' : 'Selection Complete!'}
+        </h1>
         
         <p className="text-slate-300 mb-6">
-          Thank you for your payment. Your photo selection has been processed and we'll be in touch soon.
+          {paymentDetails 
+            ? 'Thank you for your payment. Your photo selection has been processed and we\'ll be in touch soon.'
+            : 'Your photo selection has been completed successfully.'
+          }
         </p>
 
         {paymentDetails && (
           <div className="bg-slate-800/50 rounded-lg p-4 mb-6 text-left">
             <h3 className="font-semibold text-white mb-2">Payment Details</h3>
             <p className="text-sm text-slate-300">
-              Amount: ${(paymentDetails.amount_total / 100).toFixed(2)}
+              Amount: €{(paymentDetails.amount_total / 100).toFixed(2)}
             </p>
             <p className="text-sm text-slate-300">
               Status: {paymentDetails.payment_status}

@@ -92,6 +92,19 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     const paymentEmail = emailToUse || clientEmail;
     
     try {
+      // Store pending selections in localStorage before payment
+      const pendingSelections = {
+        galleryId,
+        clientEmail: paymentEmail,
+        selections: selectedPhotos.map(photoId => ({
+          gallery_id: galleryId,
+          photo_id: photoId,
+          client_email: paymentEmail,
+        }))
+      };
+      
+      localStorage.setItem('pendingSelections', JSON.stringify(pendingSelections));
+      
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           galleryId,
@@ -103,15 +116,22 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       if (error) throw error;
 
       if (data?.url) {
+        // Open payment in new tab
         window.open(data.url, '_blank');
+        
         toast({
           title: "Payment processing",
-          description: "Redirected to payment page. Complete your payment to finalize your selection.",
+          description: "Complete your payment in the new tab to finalize your selection.",
         });
+        
+        // Close the modal but don't clear selections yet
+        onClose();
       } else {
         throw new Error('No payment URL received');
       }
     } catch (error) {
+      // Clear pending selections on error
+      localStorage.removeItem('pendingSelections');
       toast({
         title: "Payment failed",
         description: error.message || "Failed to create payment session",
