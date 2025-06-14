@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Trash2, Eye, Mail, LogOut, FolderPlus, Copy, Users } from 'lucide-react';
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import WatermarkedImage from './WatermarkedImage';
+import PhotoPreviewModal from './PhotoPreviewModal';
 
 interface Gallery {
   id: string;
@@ -39,6 +39,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [selectedGallery, setSelectedGallery] = useState<Gallery | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [newGalleryData, setNewGalleryData] = useState({
     name: '',
     clientName: '',
@@ -246,6 +248,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     return data.publicUrl;
   };
 
+  const openPhotoPreview = (photo: Photo) => {
+    setSelectedPhoto(photo);
+    setIsPreviewOpen(true);
+  };
+
+  const closePhotoPreview = () => {
+    setSelectedPhoto(null);
+    setIsPreviewOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -401,22 +413,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           animate={{ opacity: 1, scale: 1 }}
                           className="group relative"
                         >
-                          <Card className="overflow-hidden bg-slate-700 border-slate-600">
-                            <WatermarkedImage
-                              src={getPhotoUrl(photo.storage_path)}
-                              alt={photo.title || photo.filename}
-                              className="w-full aspect-square object-cover"
-                            />
-                            <div className="p-2">
-                              <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
+                          <Card className="overflow-hidden bg-slate-700 border-slate-600 cursor-pointer">
+                            <div onClick={() => openPhotoPreview(photo)}>
+                              <WatermarkedImage
+                                src={getPhotoUrl(photo.storage_path)}
+                                alt={photo.title || photo.filename}
+                                className="w-full aspect-square object-cover hover:opacity-80 transition-opacity"
+                              />
+                              <div className="p-2">
+                                <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
+                              </div>
                             </div>
+                            
+                            {/* Preview button */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity border-slate-600 text-slate-300 hover:bg-slate-700"
+                              onClick={() => openPhotoPreview(photo)}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
                             
                             {/* Delete button */}
                             <Button
                               size="sm"
                               variant="destructive"
                               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => deletePhoto(photo.id, photo.storage_path)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deletePhoto(photo.id, photo.storage_path);
+                              }}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -444,6 +471,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Photo Preview Modal */}
+      <PhotoPreviewModal
+        photo={selectedPhoto}
+        isOpen={isPreviewOpen}
+        onClose={closePhotoPreview}
+        onDelete={deletePhoto}
+        getPhotoUrl={getPhotoUrl}
+      />
     </div>
   );
 };
