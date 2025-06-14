@@ -1,77 +1,112 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Trash2, Eye, Mail, Settings, LogOut, FolderPlus } from 'lucide-react';
+import { Upload, Trash2, Eye, Mail, LogOut, FolderPlus, Copy, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import WatermarkedImage from './WatermarkedImage';
 
 interface Gallery {
   id: string;
   name: string;
-  photos: Photo[];
-  createdAt: string;
-  clientEmail?: string;
+  client_name?: string;
+  client_email?: string;
+  access_code: string;
+  created_at: string;
+  photo_count?: number;
 }
 
 interface Photo {
   id: string;
-  url: string;
-  thumbnail: string;
-  title: string;
+  gallery_id: string;
+  filename: string;
+  title?: string;
   description?: string;
+  storage_path: string;
+  thumbnail_path?: string;
+  created_at: string;
 }
 
-const AdminDashboard = () => {
-  const [galleries, setGalleries] = useState<Gallery[]>([
-    {
-      id: 'gallery-1',
-      name: 'Wedding - Smith Family',
-      photos: [],
-      createdAt: '2024-01-15',
-      clientEmail: 'smith@example.com'
-    }
-  ]);
+interface AdminDashboardProps {
+  onLogout: () => void;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+  const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [selectedGallery, setSelectedGallery] = useState<Gallery | null>(null);
-  const [newGalleryName, setNewGalleryName] = useState('');
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [newGalleryData, setNewGalleryData] = useState({
+    name: '',
+    clientName: '',
+    clientEmail: ''
+  });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || !selectedGallery) return;
+  useEffect(() => {
+    fetchGalleries();
+  }, []);
 
-    const newPhotos: Photo[] = [];
-    Array.from(files).forEach((file, index) => {
-      const url = URL.createObjectURL(file);
-      newPhotos.push({
-        id: `photo-${Date.now()}-${index}`,
-        url: url,
-        thumbnail: url,
-        title: file.name,
-        description: `Uploaded ${new Date().toLocaleDateString()}`
+  useEffect(() => {
+    if (selectedGallery) {
+      fetchPhotos(selectedGallery.id);
+    }
+  }, [selectedGallery]);
+
+  const fetchGalleries = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('galleries')
+        .select(`
+          *,
+          photos(count)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const galleriesWithCount = data.map(gallery => ({
+        ...gallery,
+        photo_count: gallery.photos?.[0]?.count || 0
+      }));
+
+      setGalleries(galleriesWithCount);
+    } catch (error) {
+      toast({
+        title: "Error fetching galleries",
+        description: "Failed to load galleries",
+        variant: "destructive"
       });
-    });
-
-    const updatedGalleries = galleries.map(gallery => 
-      gallery.id === selectedGallery.id 
-        ? { ...gallery, photos: [...gallery.photos, ...newPhotos] }
-        : gallery
-    );
-    
-    setGalleries(updatedGalleries);
-    setSelectedGallery({ ...selectedGallery, photos: [...selectedGallery.photos, ...newPhotos] });
-    
-    toast({
-      title: "Photos uploaded successfully",
-      description: `Added ${newPhotos.length} photos to ${selectedGallery.name}`,
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const createNewGallery = () => {
-    if (!newGalleryName.trim()) {
+  const fetchPhotos = async (galleryId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('photos')
+        .select('*')
+        .eq('gallery_id', galleryId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPhotos(data || []);
+    } catch (error) {
+      toast({
+        title: "Error fetching photos",
+        description: "Failed to load photos",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createNewGallery = async () => {
+    if (!newGalleryData.name.trim()) {
       toast({
         title: "Gallery name required",
         description: "Please enter a name for the new gallery.",
@@ -80,50 +115,144 @@ const AdminDashboard = () => {
       return;
     }
 
-    const newGallery: Gallery = {
-      id: `gallery-${Date.now()}`,
-      name: newGalleryName,
-      photos: [],
-      createdAt: new Date().toISOString().split('T')[0]
-    };
+    try {
+      // Generate access code
+      const { data: codeData, error: codeError } = await supabase
+        .rpc('generate_access_code');
 
-    setGalleries([...galleries, newGallery]);
-    setNewGalleryName('');
-    
+      if (codeError) throw codeError;
+
+      const { data, error } = await supabase
+        .from('galleries')
+        .insert({
+          name: newGalleryData.name,
+          client_name: newGalleryData.clientName || null,
+          client_email: newGalleryData.clientEmail || null,
+          access_code: codeData
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Gallery created",
+        description: `Created new gallery with access code: ${data.access_code}`,
+      });
+
+      setNewGalleryData({ name: '', clientName: '', clientEmail: '' });
+      fetchGalleries();
+    } catch (error) {
+      toast({
+        title: "Error creating gallery",
+        description: "Failed to create new gallery",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !selectedGallery) return;
+
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${selectedGallery.id}/${fileName}`;
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('gallery-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Create database record
+      const { error: dbError } = await supabase
+        .from('photos')
+        .insert({
+          gallery_id: selectedGallery.id,
+          filename: file.name,
+          title: file.name.split('.')[0],
+          storage_path: filePath,
+          thumbnail_path: filePath // Using same path for now
+        });
+
+      if (dbError) throw dbError;
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      toast({
+        title: "Photos uploaded successfully",
+        description: `Added ${files.length} photos to ${selectedGallery.name}`,
+      });
+      fetchPhotos(selectedGallery.id);
+      fetchGalleries(); // Refresh gallery counts
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Some photos failed to upload",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deletePhoto = async (photoId: string, storagePath: string) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('gallery-photos')
+        .remove([storagePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Photo deleted",
+        description: "Photo removed from gallery.",
+      });
+
+      fetchPhotos(selectedGallery!.id);
+      fetchGalleries(); // Refresh gallery counts
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete photo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const copyAccessCode = (accessCode: string) => {
+    navigator.clipboard.writeText(accessCode);
     toast({
-      title: "Gallery created",
-      description: `Created new gallery: ${newGallery.name}`,
+      title: "Access code copied",
+      description: "Access code copied to clipboard.",
     });
   };
 
-  const deletePhoto = (photoId: string) => {
-    if (!selectedGallery) return;
+  const getPhotoUrl = (storagePath: string) => {
+    const { data } = supabase.storage
+      .from('gallery-photos')
+      .getPublicUrl(storagePath);
+    return data.publicUrl;
+  };
 
-    const updatedPhotos = selectedGallery.photos.filter(photo => photo.id !== photoId);
-    const updatedGallery = { ...selectedGallery, photos: updatedPhotos };
-    
-    const updatedGalleries = galleries.map(gallery => 
-      gallery.id === selectedGallery.id ? updatedGallery : gallery
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        <div className="text-xl">Loading dashboard...</div>
+      </div>
     );
-    
-    setGalleries(updatedGalleries);
-    setSelectedGallery(updatedGallery);
-    
-    toast({
-      title: "Photo deleted",
-      description: "Photo removed from gallery.",
-    });
-  };
-
-  const copyGalleryLink = (galleryId: string) => {
-    const link = `${window.location.origin}/gallery/${galleryId}`;
-    navigator.clipboard.writeText(link);
-    
-    toast({
-      title: "Link copied",
-      description: "Gallery link copied to clipboard.",
-    });
-  };
+  }
 
   return (
     <div className="min-h-screen text-white">
@@ -141,7 +270,7 @@ const AdminDashboard = () => {
             <p className="text-slate-300 mt-1">Manage your photo galleries</p>
           </div>
           
-          <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+          <Button onClick={onLogout} variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
             <LogOut className="w-4 h-4 mr-2" />
             Logout
           </Button>
@@ -154,36 +283,45 @@ const AdminDashboard = () => {
             <TabsTrigger value="galleries" className="data-[state=active]:bg-blue-600">
               Galleries
             </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600">
-              Settings
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="galleries" className="space-y-6">
             {/* Create New Gallery */}
             <Card className="p-6 bg-white/5 border-white/10">
               <h2 className="text-xl font-semibold mb-4">Create New Gallery</h2>
-              <div className="flex gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
-                  value={newGalleryName}
-                  onChange={(e) => setNewGalleryName(e.target.value)}
-                  placeholder="Enter gallery name (e.g., Wedding - Johnson Family)"
+                  value={newGalleryData.name}
+                  onChange={(e) => setNewGalleryData({ ...newGalleryData, name: e.target.value })}
+                  placeholder="Gallery name (e.g., Wedding - Johnson Family)"
                   className="bg-slate-700 border-slate-600 text-white"
                 />
-                <Button onClick={createNewGallery} className="bg-blue-600 hover:bg-blue-700">
-                  <FolderPlus className="w-4 h-4 mr-2" />
-                  Create
-                </Button>
+                <Input
+                  value={newGalleryData.clientName}
+                  onChange={(e) => setNewGalleryData({ ...newGalleryData, clientName: e.target.value })}
+                  placeholder="Client name (optional)"
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+                <Input
+                  value={newGalleryData.clientEmail}
+                  onChange={(e) => setNewGalleryData({ ...newGalleryData, clientEmail: e.target.value })}
+                  placeholder="Client email (optional)"
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
               </div>
+              <Button onClick={createNewGallery} className="mt-4 bg-blue-600 hover:bg-blue-700">
+                <FolderPlus className="w-4 h-4 mr-2" />
+                Create Gallery
+              </Button>
             </Card>
 
-            {/* Galleries List */}
+            {/* Galleries Management */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Gallery List */}
               <div className="lg:col-span-1">
                 <Card className="p-6 bg-white/5 border-white/10">
-                  <h2 className="text-xl font-semibold mb-4">Your Galleries</h2>
-                  <div className="space-y-3">
+                  <h2 className="text-xl font-semibold mb-4">Your Galleries ({galleries.length})</h2>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
                     {galleries.map((gallery) => (
                       <motion.div
                         key={gallery.id}
@@ -197,8 +335,11 @@ const AdminDashboard = () => {
                       >
                         <h3 className="font-medium">{gallery.name}</h3>
                         <p className="text-sm text-slate-400">
-                          {gallery.photos.length} photos • Created {gallery.createdAt}
+                          {gallery.photo_count} photos • {new Date(gallery.created_at).toLocaleDateString()}
                         </p>
+                        {gallery.client_name && (
+                          <p className="text-sm text-blue-300">{gallery.client_name}</p>
+                        )}
                         <div className="flex gap-2 mt-3">
                           <Button
                             size="sm"
@@ -206,11 +347,11 @@ const AdminDashboard = () => {
                             className="border-slate-600 text-slate-300 hover:bg-slate-700"
                             onClick={(e) => {
                               e.stopPropagation();
-                              copyGalleryLink(gallery.id);
+                              copyAccessCode(gallery.access_code);
                             }}
                           >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Share
+                            <Copy className="w-3 h-3 mr-1" />
+                            {gallery.access_code}
                           </Button>
                         </div>
                       </motion.div>
@@ -226,7 +367,8 @@ const AdminDashboard = () => {
                     <div className="flex justify-between items-center mb-6">
                       <div>
                         <h2 className="text-xl font-semibold">{selectedGallery.name}</h2>
-                        <p className="text-slate-400">{selectedGallery.photos.length} photos</p>
+                        <p className="text-slate-400">{photos.length} photos</p>
+                        <p className="text-sm text-blue-300">Access Code: {selectedGallery.access_code}</p>
                       </div>
                       
                       <div className="flex gap-3">
@@ -251,8 +393,8 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Photos Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {selectedGallery.photos.map((photo) => (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                      {photos.map((photo) => (
                         <motion.div
                           key={photo.id}
                           initial={{ opacity: 0, scale: 0.8 }}
@@ -261,12 +403,12 @@ const AdminDashboard = () => {
                         >
                           <Card className="overflow-hidden bg-slate-700 border-slate-600">
                             <WatermarkedImage
-                              src={photo.thumbnail}
-                              alt={photo.title}
+                              src={getPhotoUrl(photo.storage_path)}
+                              alt={photo.title || photo.filename}
                               className="w-full aspect-square object-cover"
                             />
                             <div className="p-2">
-                              <p className="text-xs text-slate-300 truncate">{photo.title}</p>
+                              <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
                             </div>
                             
                             {/* Delete button */}
@@ -274,7 +416,7 @@ const AdminDashboard = () => {
                               size="sm"
                               variant="destructive"
                               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => deletePhoto(photo.id)}
+                              onClick={() => deletePhoto(photo.id, photo.storage_path)}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -283,7 +425,7 @@ const AdminDashboard = () => {
                       ))}
                     </div>
 
-                    {selectedGallery.photos.length === 0 && (
+                    {photos.length === 0 && (
                       <div className="text-center py-12 text-slate-400">
                         <Upload className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No photos uploaded yet. Click "Upload Photos" to get started.</p>
@@ -299,39 +441,6 @@ const AdminDashboard = () => {
                 )}
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card className="p-6 bg-white/5 border-white/10">
-              <h2 className="text-xl font-semibold mb-4">Settings</h2>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Watermark Text
-                  </label>
-                  <Input
-                    defaultValue="© PHOTO STUDIO"
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Admin Email
-                  </label>
-                  <Input
-                    type="email"
-                    defaultValue="admin@photostudio.com"
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-                
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Save Settings
-                </Button>
-              </div>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,18 +1,15 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, User } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-interface AdminLoginProps {
-  onLogin: () => void;
-}
-
-const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+const AdminLogin: React.FC = () => {
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -20,25 +17,33 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple demo credentials - in real app, use proper authentication
-    if (credentials.username === 'admin' && credentials.password === 'admin123') {
-      setTimeout(() => {
-        onLogin();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) {
         toast({
-          title: "Welcome back!",
-          description: "Successfully logged in to admin dashboard.",
-        });
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        toast({
-          title: "Invalid credentials",
-          description: "Please check your username and password.",
+          title: "Login failed",
+          description: error.message,
           variant: "destructive"
         });
-        setIsLoading(false);
-      }, 1000);
+        return;
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "Successfully logged in to admin dashboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,15 +66,15 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Username
+                Email
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <Input
-                  type="text"
-                  value={credentials.username}
-                  onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                  placeholder="Enter username"
+                  type="email"
+                  value={credentials.email}
+                  onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                  placeholder="Enter your email"
                   className="pl-10 bg-slate-700/50 border-slate-600 text-white"
                   required
                 />
@@ -101,14 +106,6 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-blue-900/20 rounded-lg border border-blue-500/30">
-            <p className="text-sm text-blue-300 text-center">
-              <strong>Demo credentials:</strong><br />
-              Username: admin<br />
-              Password: admin123
-            </p>
-          </div>
         </Card>
       </motion.div>
     </div>

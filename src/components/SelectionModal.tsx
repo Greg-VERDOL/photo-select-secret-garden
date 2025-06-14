@@ -7,14 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import WatermarkedImage from './WatermarkedImage';
 
 interface Photo {
   id: string;
-  url: string;
-  thumbnail: string;
-  title: string;
+  url?: string;
+  thumbnail?: string;
+  title?: string;
   description?: string;
+  filename: string;
 }
 
 interface SelectionModalProps {
@@ -24,6 +26,7 @@ interface SelectionModalProps {
   photos: Photo[];
   clientInfo: { name: string; email: string };
   setClientInfo: (info: { name: string; email: string }) => void;
+  galleryId: string;
 }
 
 const SelectionModal: React.FC<SelectionModalProps> = ({
@@ -32,7 +35,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   selectedPhotos,
   photos,
   clientInfo,
-  setClientInfo
+  setClientInfo,
+  galleryId
 }) => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,25 +58,39 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
     setIsSubmitting(true);
 
-    // Simulate email sending - in real app, this would call your backend
     try {
+      // Save photo selections to database
+      const selections = Array.from(selectedPhotos).map(photoId => ({
+        gallery_id: galleryId,
+        photo_id: photoId,
+        client_email: clientInfo.email
+      }));
+
+      const { error } = await supabase
+        .from('photo_selections')
+        .upsert(selections, { 
+          onConflict: 'gallery_id,photo_id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) throw error;
+
+      // Here you would typically send an email notification to the admin
+      // For now, we'll just show a success message
       const emailData = {
         clientName: clientInfo.name,
         clientEmail: clientInfo.email,
         message: message,
+        galleryId: galleryId,
         selectedPhotos: selectedPhotosList.map(photo => ({
           id: photo.id,
-          title: photo.title,
-          url: photo.url
+          title: photo.title || photo.filename,
+          filename: photo.filename
         })),
         timestamp: new Date().toISOString()
       };
 
-      // Here you would send this data to your backend API
-      console.log('Email data to send:', emailData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Photo selection data saved:', emailData);
 
       toast({
         title: "Selection sent successfully!",
@@ -81,10 +99,10 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
       onClose();
       // Reset form
-      setClientInfo({ name: '', email: '' });
       setMessage('');
       
     } catch (error) {
+      console.error('Error saving selection:', error);
       toast({
         title: "Error sending selection",
         description: "Please try again or contact us directly.",
@@ -127,12 +145,12 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
               {selectedPhotosList.map((photo) => (
                 <Card key={photo.id} className="overflow-hidden bg-slate-700 border-slate-600">
                   <WatermarkedImage
-                    src={photo.thumbnail}
-                    alt={photo.title}
+                    src={photo.thumbnail || photo.url || ''}
+                    alt={photo.title || photo.filename}
                     className="w-full aspect-square object-cover"
                   />
                   <div className="p-2">
-                    <p className="text-xs text-slate-300 truncate">{photo.title}</p>
+                    <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
                   </div>
                 </Card>
               ))}

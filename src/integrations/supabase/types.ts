@@ -9,13 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      galleries: {
+        Row: {
+          access_code: string
+          client_email: string | null
+          client_name: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          access_code: string
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      photo_selections: {
+        Row: {
+          client_email: string | null
+          gallery_id: string
+          id: string
+          photo_id: string
+          selected_at: string
+        }
+        Insert: {
+          client_email?: string | null
+          gallery_id: string
+          id?: string
+          photo_id: string
+          selected_at?: string
+        }
+        Update: {
+          client_email?: string | null
+          gallery_id?: string
+          id?: string
+          photo_id?: string
+          selected_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_selections_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photo_selections_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photos: {
+        Row: {
+          created_at: string
+          description: string | null
+          filename: string
+          gallery_id: string
+          id: string
+          is_selected: boolean | null
+          storage_path: string
+          thumbnail_path: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          filename: string
+          gallery_id: string
+          id?: string
+          is_selected?: boolean | null
+          storage_path: string
+          thumbnail_path?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          filename?: string
+          gallery_id?: string
+          id?: string
+          is_selected?: boolean | null
+          storage_path?: string
+          thumbnail_path?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_access_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
