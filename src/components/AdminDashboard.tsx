@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Image, Users, Heart, Settings } from 'lucide-react';
+import { LogOut, Image, Heart, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import GalleriesTab from './GalleriesTab';
 import PhotoSelectionsTab from './PhotoSelectionsTab';
-import CustomersTab from './CustomersTab';
 import SettingsTab from './SettingsTab';
 
 interface AdminDashboardProps {
@@ -19,7 +18,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const tabs = [
     { id: 'galleries', label: 'Galleries', icon: Image },
     { id: 'selections', label: 'Photo Selections', icon: Heart },
-    { id: 'customers', label: 'Customers', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -29,8 +27,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         return <GalleriesTab />;
       case 'selections':
         return <PhotoSelectionsTab />;
-      case 'customers':
-        return <CustomersTab />;
       case 'settings':
         return <SettingsTab />;
       default:

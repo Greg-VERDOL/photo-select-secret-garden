@@ -50,7 +50,7 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "eur",
             product_data: {
               name: `${extraPhotosCount} Extra Photo${extraPhotosCount > 1 ? 's' : ''}`,
               description: `Additional photo selections beyond the free limit`,

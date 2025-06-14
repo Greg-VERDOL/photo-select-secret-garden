@@ -1,320 +1,248 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, Mail, Heart, CreditCard, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Heart, X, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import WatermarkedImage from './WatermarkedImage';
+import { useToast } from '@/hooks/use-toast';
 
 interface Photo {
   id: string;
-  url?: string;
-  thumbnail?: string;
-  title?: string;
-  description?: string;
   filename: string;
-}
-
-interface Gallery {
-  id: string;
-  name: string;
-  free_photo_limit: number;
+  storage_path: string;
 }
 
 interface SelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedPhotos: Set<string>;
   photos: Photo[];
-  clientInfo: { name: string; email: string };
-  setClientInfo: (info: { name: string; email: string }) => void;
+  selectedPhotos: string[];
+  onPhotoToggle: (photoId: string) => void;
   galleryId: string;
+  clientEmail: string;
+  freePhotoLimit: number;
+  getPhotoUrl: (storagePath: string) => string;
 }
 
 const SelectionModal: React.FC<SelectionModalProps> = ({
   isOpen,
   onClose,
-  selectedPhotos,
   photos,
-  clientInfo,
-  setClientInfo,
-  galleryId
+  selectedPhotos,
+  onPhotoToggle,
+  galleryId,
+  clientEmail,
+  freePhotoLimit,
+  getPhotoUrl,
 }) => {
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [gallery, setGallery] = useState<Gallery | null>(null);
-  const [pricePerPhoto, setPricePerPhoto] = useState(0);
+  const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const { toast } = useToast();
 
-  const selectedPhotosList = photos.filter(photo => selectedPhotos.has(photo.id));
-  const freeLimit = gallery?.free_photo_limit || 5;
-  const extraPhotos = Math.max(0, selectedPhotos.size - freeLimit);
-  const totalCost = extraPhotos * pricePerPhoto;
-
   useEffect(() => {
-    if (isOpen && galleryId) {
-      fetchGalleryAndPricing();
-    }
-  }, [isOpen, galleryId]);
+    fetchPricing();
+  }, []);
 
-  const fetchGalleryAndPricing = async () => {
+  const fetchPricing = async () => {
     try {
-      // Fetch gallery info
-      const { data: galleryData, error: galleryError } = await supabase
-        .from('galleries')
-        .select('id, name, free_photo_limit')
-        .eq('id', galleryId)
-        .single();
-
-      if (galleryError) throw galleryError;
-      setGallery(galleryData);
-
-      // Fetch price per photo
-      const { data: priceData, error: priceError } = await supabase
+      const { data, error } = await supabase
         .from('app_settings')
         .select('value')
         .eq('key', 'price_per_extra_photo_cents')
         .single();
 
-      if (priceError) throw priceError;
-      setPricePerPhoto(parseInt(priceData.value) / 100);
+      if (error) throw error;
+      setPricePerPhoto(parseInt(data.value) / 100);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching pricing:', error);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!clientInfo.name || !clientInfo.email) {
-      toast({
-        title: "Missing information",
-        description: "Please provide your name and email address.",
-        variant: "destructive"
-      });
-      return;
+  const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
+  const totalCost = extraPhotosCount * pricePerPhoto;
+  const needsPayment = extraPhotosCount > 0;
+
+  const handleSubmit = async () => {
+    if (needsPayment) {
+      await handlePayment();
+    } else {
+      await saveSelections();
     }
+  };
 
-    setIsSubmitting(true);
-
+  const handlePayment = async () => {
+    setIsProcessingPayment(true);
     try {
-      // If extra photos need payment, redirect to Stripe
-      if (extraPhotos > 0) {
-        const { data, error } = await supabase.functions.invoke('create-payment', {
-          body: {
-            galleryId,
-            clientEmail: clientInfo.email,
-            extraPhotosCount: extraPhotos
-          }
-        });
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          galleryId,
+          clientEmail,
+          extraPhotosCount
+        }
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Store selections temporarily (we'll complete after payment)
-        const selections = Array.from(selectedPhotos).map(photoId => ({
-          gallery_id: galleryId,
-          photo_id: photoId,
-          client_email: clientInfo.email
-        }));
-
-        // Store in localStorage to complete after payment
-        localStorage.setItem('pendingSelections', JSON.stringify({
-          selections,
-          clientInfo,
-          message
-        }));
-
-        // Redirect to Stripe
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
         window.open(data.url, '_blank');
-        
         toast({
-          title: "Redirecting to payment",
-          description: "Complete your payment to finalize your selection.",
+          title: "Payment processing",
+          description: "Redirected to payment page. Complete your payment to finalize your selection.",
         });
       } else {
-        // No payment needed, save selections directly
-        const selections = Array.from(selectedPhotos).map(photoId => ({
+        throw new Error('No payment URL received');
+      }
+    } catch (error) {
+      toast({
+        title: "Payment failed",
+        description: error.message || "Failed to create payment session",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const saveSelections = async () => {
+    try {
+      // Delete existing selections for this client and gallery
+      await supabase
+        .from('photo_selections')
+        .delete()
+        .eq('gallery_id', galleryId)
+        .eq('client_email', clientEmail);
+
+      // Insert new selections
+      if (selectedPhotos.length > 0) {
+        const selections = selectedPhotos.map(photoId => ({
           gallery_id: galleryId,
           photo_id: photoId,
-          client_email: clientInfo.email
+          client_email: clientEmail,
         }));
 
         const { error } = await supabase
           .from('photo_selections')
-          .upsert(selections, { 
-            onConflict: 'gallery_id,photo_id',
-            ignoreDuplicates: false 
-          });
+          .insert(selections);
 
         if (error) throw error;
-
-        toast({
-          title: "Selection sent successfully!",
-          description: "We've received your photo selection and will be in touch soon.",
-        });
-
-        onClose();
-        setMessage('');
       }
-    } catch (error) {
-      console.error('Error processing selection:', error);
+
       toast({
-        title: "Error processing selection",
-        description: "Please try again or contact us directly.",
+        title: "Selections saved!",
+        description: `You've selected ${selectedPhotos.length} photo(s).`,
+      });
+
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error saving selections",
+        description: "Failed to save your photo selections.",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-slate-700">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Send Your Selection</h2>
-            <p className="text-slate-300 mt-1">{selectedPhotos.size} photos selected</p>
-            {freeLimit > 0 && (
-              <p className="text-sm text-slate-400">
-                {Math.min(selectedPhotos.size, freeLimit)} free • {extraPhotos} extra photos
-              </p>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-6 h-6" />
-          </Button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <Heart className="w-5 h-5 text-red-500" />
+            <span>Your Photo Selection</span>
+            <Badge variant="secondary">{selectedPhotos.length} selected</Badge>
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {/* Payment Summary */}
-          {extraPhotos > 0 && (
-            <Card className="bg-blue-900/20 border-blue-400/30 p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <h3 className="font-semibold text-white">Payment Required</h3>
-                    <p className="text-sm text-slate-300">
-                      {extraPhotos} extra photo{extraPhotos > 1 ? 's' : ''} × ${pricePerPhoto.toFixed(2)} each
-                    </p>
+        <div className="space-y-6">
+          {/* Pricing Information */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-900 mb-2">Pricing Information</h3>
+            <div className="text-sm text-blue-800 space-y-1">
+              <p>• Free photos included: {freePhotoLimit}</p>
+              <p>• Price per extra photo: €{pricePerPhoto.toFixed(2)}</p>
+              <p>• Photos selected: {selectedPhotos.length}</p>
+              {extraPhotosCount > 0 && (
+                <p className="font-semibold">• Extra photos: {extraPhotosCount} (€{totalCost.toFixed(2)})</p>
+              )}
+            </div>
+          </div>
+
+          {/* Selected Photos Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {photos
+              .filter(photo => selectedPhotos.includes(photo.id))
+              .map((photo) => (
+                <div key={photo.id} className="relative group">
+                  <img
+                    src={getPhotoUrl(photo.storage_path)}
+                    alt={photo.filename}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => onPhotoToggle(photo.id)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="absolute bottom-2 left-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedPhotos.indexOf(photo.id) + 1}
+                    </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center text-xl font-bold text-white">
-                    <DollarSign className="w-5 h-5" />
-                    {totalCost.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </Card>
+              ))}
+          </div>
+
+          {selectedPhotos.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Heart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No photos selected yet</p>
+              <p className="text-sm">Go back and select your favorite photos</p>
+            </div>
           )}
 
-          {/* Selected Photos Preview */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <Heart className="w-5 h-5 text-red-400 mr-2" />
-              Selected Photos
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {selectedPhotosList.map((photo, index) => (
-                <Card key={photo.id} className="overflow-hidden bg-slate-700 border-slate-600 relative">
-                  <WatermarkedImage
-                    src={photo.thumbnail || photo.url || ''}
-                    alt={photo.title || photo.filename}
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="p-2">
-                    <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
-                  </div>
-                  {index >= freeLimit && (
-                    <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                      ${pricePerPhoto.toFixed(2)}
-                    </div>
-                  )}
-                </Card>
-              ))}
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="text-sm text-gray-600">
+              {needsPayment && (
+                <span className="text-red-600 font-semibold">
+                  Total cost: €{totalCost.toFixed(2)}
+                </span>
+              )}
+              {!needsPayment && selectedPhotos.length > 0 && (
+                <span className="text-green-600 font-semibold">
+                  All photos are free!
+                </span>
+              )}
             </div>
-          </div>
-
-          {/* Contact Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Your Name *
-                </label>
-                <Input
-                  type="text"
-                  value={clientInfo.name}
-                  onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
-                  placeholder="Enter your name"
-                  className="bg-slate-700 border-slate-600 text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Email Address *
-                </label>
-                <Input
-                  type="email"
-                  value={clientInfo.email}
-                  onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                  placeholder="Enter your email"
-                  className="bg-slate-700 border-slate-600 text-white"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Message (Optional)
-              </label>
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Any special requests or comments..."
-                className="bg-slate-700 border-slate-600 text-white min-h-[100px]"
-              />
-            </div>
-
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="border-slate-600 text-slate-300 hover:bg-slate-700"
-              >
+            
+            <div className="space-x-3">
+              <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className={`${extraPhotos > 0 ? 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'}`}
+              <Button 
+                onClick={handleSubmit}
+                disabled={selectedPhotos.length === 0 || isProcessingPayment}
+                className={needsPayment ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}
               >
-                {extraPhotos > 0 ? <CreditCard className="w-4 h-4 mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
-                {isSubmitting ? 'Processing...' : extraPhotos > 0 ? `Pay $${totalCost.toFixed(2)}` : 'Send Selection'}
+                {isProcessingPayment ? (
+                  "Processing..."
+                ) : needsPayment ? (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay €{totalCost.toFixed(2)}
+                  </>
+                ) : (
+                  "Confirm Selection"
+                )}
               </Button>
             </div>
-          </form>
+          </div>
         </div>
-      </motion.div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -12,6 +12,7 @@ const SettingsTab: React.FC = () => {
   const [isStripeConnected, setIsStripeConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingStripe, setTestingStripe] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,14 +76,20 @@ const SettingsTab: React.FC = () => {
   };
 
   const testStripeConnection = async () => {
+    setTestingStripe(true);
     try {
-      // Test Stripe connection by making a simple API call
-      const response = await fetch('/api/test-stripe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      // Test Stripe connection by creating a simple test payment session
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          galleryId: 'test-gallery-id',
+          clientEmail: 'test@example.com',
+          extraPhotosCount: 1
+        }
       });
       
-      if (response.ok) {
+      if (error) throw error;
+      
+      if (data?.url) {
         setIsStripeConnected(true);
         await supabase
           .from('app_settings')
@@ -96,15 +103,24 @@ const SettingsTab: React.FC = () => {
           description: "Stripe integration is working correctly",
         });
       } else {
-        throw new Error('Stripe test failed');
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       setIsStripeConnected(false);
+      await supabase
+        .from('app_settings')
+        .upsert({
+          key: 'stripe_connected',
+          value: 'false'
+        }, { onConflict: 'key' });
+      
       toast({
         title: "Stripe connection failed",
-        description: "Please check your Stripe configuration",
+        description: error.message || "Please check your Stripe configuration",
         variant: "destructive"
       });
+    } finally {
+      setTestingStripe(false);
     }
   };
 
@@ -142,19 +158,22 @@ const SettingsTab: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Price per Extra Photo (USD)
+              Price per Extra Photo (EUR)
             </label>
             <div className="flex items-center space-x-4">
               <div className="flex-1 max-w-xs">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={pricePerPhoto}
-                  onChange={(e) => setPricePerPhoto(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white"
-                  placeholder="5.00"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={pricePerPhoto}
+                    onChange={(e) => setPricePerPhoto(e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white pl-8"
+                    placeholder="5.00"
+                  />
+                </div>
               </div>
               <Button
                 onClick={saveSettings}
@@ -165,7 +184,7 @@ const SettingsTab: React.FC = () => {
               </Button>
             </div>
             <p className="text-sm text-slate-400 mt-2">
-              Clients will be charged this amount for each photo selected beyond their free limit
+              Clients will be charged this amount in EUR for each photo selected beyond their free limit
             </p>
           </div>
         </div>
@@ -192,16 +211,17 @@ const SettingsTab: React.FC = () => {
         
         <div className="space-y-4">
           <p className="text-slate-300">
-            Stripe is used to process payments when clients select more photos than their free limit.
+            Stripe is used to process payments in EUR when clients select more photos than their free limit.
             Make sure your Stripe secret key is configured in the edge function secrets.
           </p>
           
           <Button
             onClick={testStripeConnection}
+            disabled={testingStripe}
             variant="outline"
             className="border-slate-600 text-slate-300 hover:bg-slate-700"
           >
-            Test Stripe Connection
+            {testingStripe ? 'Testing...' : 'Test Stripe Connection'}
           </Button>
         </div>
       </Card>
