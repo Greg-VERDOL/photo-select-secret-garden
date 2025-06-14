@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           access_code: string
@@ -43,6 +67,7 @@ export type Database = {
           client_id: string | null
           client_name: string | null
           created_at: string
+          free_photo_limit: number | null
           id: string
           name: string
           updated_at: string
@@ -53,6 +78,7 @@ export type Database = {
           client_id?: string | null
           client_name?: string | null
           created_at?: string
+          free_photo_limit?: number | null
           id?: string
           name: string
           updated_at?: string
@@ -63,6 +89,7 @@ export type Database = {
           client_id?: string | null
           client_name?: string | null
           created_at?: string
+          free_photo_limit?: number | null
           id?: string
           name?: string
           updated_at?: string
@@ -73,6 +100,50 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_sessions: {
+        Row: {
+          amount_cents: number
+          client_email: string
+          created_at: string
+          extra_photos_count: number
+          gallery_id: string
+          id: string
+          status: string
+          stripe_session_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          client_email: string
+          created_at?: string
+          extra_photos_count: number
+          gallery_id: string
+          id?: string
+          status?: string
+          stripe_session_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          client_email?: string
+          created_at?: string
+          extra_photos_count?: number
+          gallery_id?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_sessions_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
             referencedColumns: ["id"]
           },
         ]
