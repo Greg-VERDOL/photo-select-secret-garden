@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Mail, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
@@ -26,6 +25,7 @@ interface Gallery {
   client_name?: string;
   client_email?: string;
   access_code: string;
+  free_photo_limit?: number;
 }
 
 const ClientGallery = () => {
@@ -359,9 +359,11 @@ const ClientGallery = () => {
         onClose={() => setShowSelectionModal(false)}
         selectedPhotos={Array.from(selectedPhotos)}
         photos={photos}
-        clientInfo={clientInfo}
-        setClientInfo={setClientInfo}
+        onPhotoToggle={togglePhotoSelection}
         galleryId={gallery.id}
+        clientEmail={clientInfo.email || gallery.client_email || ''}
+        freePhotoLimit={gallery.free_photo_limit || 5}
+        getPhotoUrl={getPhotoUrl}
       />
     </div>
   );
