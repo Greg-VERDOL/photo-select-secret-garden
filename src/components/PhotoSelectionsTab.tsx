@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Heart, Download, Eye, User, Calendar, Image as ImageIcon } from 'lucide-react';
+import PhotoSelectionsHeader from './PhotoSelectionsHeader';
+import EmptySelectionsState from './EmptySelectionsState';
+import ClientSelectionCard from './ClientSelectionCard';
 import PhotoSelectionModal from './PhotoSelectionModal';
 
 interface PhotoSelection {
@@ -159,100 +159,21 @@ const PhotoSelectionsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center py-8">
-        <h2 className="text-4xl font-light text-white mb-3">Photo Selections</h2>
-        <p className="text-slate-400 text-lg">Beautifully curated by your clients</p>
-      </div>
+      <PhotoSelectionsHeader />
 
       {groupedSelections.length === 0 ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center max-w-md">
-            <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Heart className="w-12 h-12 text-slate-400" />
-            </div>
-            <h3 className="text-2xl font-light mb-3 text-white">No Selections Yet</h3>
-            <p className="text-slate-400 text-lg leading-relaxed">
-              Client photo selections will appear here when they make their choices
-            </p>
-          </div>
-        </div>
+        <EmptySelectionsState />
       ) : (
         <div className="space-y-8">
           {groupedSelections.map((clientGroup, index) => (
-            <Card key={index} className="bg-white/3 border-white/10 backdrop-blur-xl rounded-2xl overflow-hidden">
-              {/* Client Header */}
-              <div className="p-8 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
-                      <User className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-medium text-white mb-1">{clientGroup.clientName}</h3>
-                      <p className="text-slate-400 mb-1">{clientGroup.clientEmail}</p>
-                      <div className="flex items-center space-x-4 text-sm text-slate-500">
-                        <span className="flex items-center space-x-1">
-                          <ImageIcon className="w-4 h-4" />
-                          <span>{clientGroup.galleryName}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <Heart className="w-4 h-4" />
-                          <span>{clientGroup.selections.length} selected</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button
-                    onClick={() => downloadClientSelections(clientGroup)}
-                    disabled={downloadingClient === clientGroup.clientName}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    {downloadingClient === clientGroup.clientName ? 'Preparing...' : 'Download All'}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Photos Grid */}
-              <div className="p-8">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                  {clientGroup.selections.map((selection) => (
-                    <div
-                      key={selection.id}
-                      className="group relative aspect-square rounded-xl overflow-hidden bg-slate-800 cursor-pointer hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
-                      onClick={() => setSelectedPhoto(selection)}
-                    >
-                      <img
-                        src={getPhotoUrl(selection.photo.storage_path)}
-                        alt={selection.photo.title || selection.photo.filename}
-                        className="w-full h-full object-cover"
-                      />
-                      
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                            <Eye className="w-6 h-6 text-white" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Selection Date Badge */}
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <div className="bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-white">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{new Date(selection.selected_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
+            <ClientSelectionCard
+              key={index}
+              clientGroup={clientGroup}
+              getPhotoUrl={getPhotoUrl}
+              onPhotoClick={setSelectedPhoto}
+              onDownloadAll={downloadClientSelections}
+              downloadingClient={downloadingClient}
+            />
           ))}
         </div>
       )}
