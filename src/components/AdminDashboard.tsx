@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import AdminSidebar from './AdminSidebar';
 import GalleriesTab from './GalleriesTab';
-import CustomersTab from './CustomersTab';
 import PhotoSelectionsTab from './PhotoSelectionsTab';
 
 interface AdminDashboardProps {
@@ -20,8 +19,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     switch (activeTab) {
       case 'galleries':
         return <GalleriesTab />;
-      case 'customers':
-        return <CustomersTab />;
       case 'selections':
         return <PhotoSelectionsTab />;
       default:
@@ -48,7 +45,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     Admin Dashboard
                   </h1>
-                  <p className="text-slate-300 mt-1">Manage your photo galleries and clients</p>
+                  <p className="text-slate-300 mt-1">Manage your photo galleries and client selections</p>
                 </div>
               </div>
               

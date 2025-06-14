@@ -10,7 +10,7 @@ import {
   SidebarMenuButton, 
   SidebarMenuItem 
 } from '@/components/ui/sidebar';
-import { FolderOpen, Users, Heart } from 'lucide-react';
+import { FolderOpen, Heart } from 'lucide-react';
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -25,11 +25,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChange }) =
       icon: FolderOpen,
     },
     {
-      title: "Customers",
-      value: "customers", 
-      icon: Users,
-    },
-    {
       title: "Photo Selections",
       value: "selections",
       icon: Heart,
@@ -38,19 +33,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChange }) =
 
   return (
     <Sidebar className="border-r border-slate-700">
-      <SidebarContent className="bg-slate-800 px-6 py-6">
+      <SidebarContent className="bg-slate-800 px-8 py-8">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-300 mb-4">Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-300 mb-6 text-base">Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-3">
+            <SidebarMenu className="space-y-4">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton 
                     isActive={activeTab === item.value}
                     onClick={() => onTabChange(item.value)}
-                    className="text-slate-300 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:text-white px-4 py-3 rounded-lg transition-colors"
+                    className="text-slate-300 hover:bg-slate-700 data-[active=true]:bg-blue-600 data-[active=true]:text-white px-6 py-4 rounded-lg transition-colors text-base"
                   >
-                    <item.icon className="w-4 h-4 mr-3" />
+                    <item.icon className="w-5 h-5 mr-4" />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
