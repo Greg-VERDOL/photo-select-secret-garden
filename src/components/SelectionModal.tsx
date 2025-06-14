@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Heart, X, CreditCard, Mail } from 'lucide-react';
+import { Heart, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EmailFormModal from './EmailFormModal';
+import PricingInfo from './PricingInfo';
+import SelectedPhotosGrid from './SelectedPhotosGrid';
+import EmptySelectionState from './EmptySelectionState';
 
 interface Photo {
   id: string;
@@ -40,7 +42,6 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 }) => {
   const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [tempClientEmail, setTempClientEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
 
@@ -81,27 +82,9 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     }
   };
 
-  const handleEmailSubmit = async () => {
-    if (!tempClientEmail || tempClientEmail.trim() === '') {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address to proceed with payment.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tempClientEmail.trim())) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleEmailSubmit = async (email: string) => {
     setShowEmailForm(false);
-    await handlePayment(tempClientEmail.trim());
+    await handlePayment(email);
   };
 
   const handlePayment = async (emailToUse?: string) => {
@@ -180,49 +163,13 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
   if (showEmailForm) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Mail className="w-5 h-5 text-blue-500" />
-              <span>Email Required for Payment</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
-                We need your email address to process the payment for {extraPhotosCount} extra photo{extraPhotosCount > 1 ? 's' : ''} (€{totalCost.toFixed(2)}).
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="client-email">Email Address</Label>
-              <Input
-                id="client-email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={tempClientEmail}
-                onChange={(e) => setTempClientEmail(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            <div className="flex justify-between items-center pt-4">
-              <Button variant="outline" onClick={() => setShowEmailForm(false)}>
-                Back
-              </Button>
-              <Button 
-                onClick={handleEmailSubmit}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Continue to Payment
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EmailFormModal
+        isOpen={isOpen}
+        onClose={() => setShowEmailForm(false)}
+        onEmailSubmit={handleEmailSubmit}
+        extraPhotosCount={extraPhotosCount}
+        totalCost={totalCost}
+      />
     );
   }
 
@@ -238,51 +185,23 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Pricing Information */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Pricing Information</h3>
-            <div className="text-sm text-blue-800 space-y-1">
-              <p>• Free photos included: {freePhotoLimit}</p>
-              <p>• Price per extra photo: €{pricePerPhoto.toFixed(2)}</p>
-              <p>• Photos selected: {selectedPhotos.length}</p>
-              {extraPhotosCount > 0 && (
-                <p className="font-semibold">• Extra photos: {extraPhotosCount} (€{totalCost.toFixed(2)})</p>
-              )}
-            </div>
-          </div>
+          <PricingInfo
+            freePhotoLimit={freePhotoLimit}
+            pricePerPhoto={pricePerPhoto}
+            selectedPhotosCount={selectedPhotos.length}
+            extraPhotosCount={extraPhotosCount}
+            totalCost={totalCost}
+          />
 
-          {/* Selected Photos Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {photos
-              .filter(photo => selectedPhotos.includes(photo.id))
-              .map((photo) => (
-                <div key={photo.id} className="relative group">
-                  <img
-                    src={getPhotoUrl(photo.storage_path)}
-                    alt={photo.filename}
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => onPhotoToggle(photo.id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-2 left-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {selectedPhotos.indexOf(photo.id) + 1}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-          </div>
-
-          {selectedPhotos.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Heart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>No photos selected yet</p>
-              <p className="text-sm">Go back and select your favorite photos</p>
-            </div>
+          {selectedPhotos.length === 0 ? (
+            <EmptySelectionState />
+          ) : (
+            <SelectedPhotosGrid
+              photos={photos}
+              selectedPhotos={selectedPhotos}
+              onPhotoToggle={onPhotoToggle}
+              getPhotoUrl={getPhotoUrl}
+            />
           )}
 
           {/* Action Buttons */}
