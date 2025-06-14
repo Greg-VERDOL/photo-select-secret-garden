@@ -357,7 +357,7 @@ const ClientGallery = () => {
       <SelectionModal
         isOpen={showSelectionModal}
         onClose={() => setShowSelectionModal(false)}
-        selectedPhotos={selectedPhotos}
+        selectedPhotos={Array.from(selectedPhotos)}
         photos={photos}
         clientInfo={clientInfo}
         setClientInfo={setClientInfo}
