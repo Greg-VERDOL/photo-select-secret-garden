@@ -29,7 +29,7 @@ const SecureImage: React.FC<SecureImageProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isBlurred, setIsBlurred] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { generateSecureImageUrl, logDownloadAttempt, isSessionValid } = useSecureViewing(galleryId, clientEmail);
 
   // Security event handlers
@@ -54,22 +54,12 @@ const SecureImage: React.FC<SecureImageProps> = ({
     }
   }, [photoId, logDownloadAttempt]);
 
-  const handleVisibilityChange = useCallback(() => {
-    if (document.hidden) {
-      setIsBlurred(true);
-    } else {
-      // Delay removing blur to make screenshots harder
-      setTimeout(() => setIsBlurred(false), 1000);
-    }
-  }, []);
-
   const handleDevToolsDetection = useCallback(() => {
     const threshold = 160;
     if (window.outerHeight - window.innerHeight > threshold || 
         window.outerWidth - window.innerWidth > threshold) {
       logDownloadAttempt(photoId, 'dev_tools_detected');
-      // Keep detection but don't show blur overlay
-      // setIsBlurred(true); // Commented out to disable visual feedback
+      // Keep detection but don't show visual feedback for now
     }
   }, [photoId, logDownloadAttempt]);
 
@@ -77,10 +67,9 @@ const SecureImage: React.FC<SecureImageProps> = ({
     // Add security event listeners
     document.addEventListener('contextmenu', handleRightClick);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Dev tools detection
-    const devToolsInterval = setInterval(handleDevToolsDetection, 1000);
+    // Dev tools detection (reduced frequency to avoid spam)
+    const devToolsInterval = setInterval(handleDevToolsDetection, 5000);
     
     // Disable drag and drop
     const handleDragStart = (e: DragEvent) => {
@@ -93,30 +82,47 @@ const SecureImage: React.FC<SecureImageProps> = ({
     return () => {
       document.removeEventListener('contextmenu', handleRightClick);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('dragstart', handleDragStart);
       clearInterval(devToolsInterval);
     };
-  }, [handleRightClick, handleKeyDown, handleVisibilityChange, handleDevToolsDetection, photoId, logDownloadAttempt]);
+  }, [handleRightClick, handleKeyDown, handleDevToolsDetection, photoId, logDownloadAttempt]);
 
   useEffect(() => {
-    if (!isSessionValid) return;
+    if (!isSessionValid) {
+      console.log('Session not valid for photo:', photoId);
+      return;
+    }
     
     const loadSecureImage = async () => {
       setIsLoading(true);
+      setLoadError(null);
+      
       try {
+        console.log('Loading secure image for photo:', photoId);
         const secureUrl = await generateSecureImageUrl(photoId, storagePath);
-        if (!secureUrl) throw new Error('Failed to generate secure URL');
+        
+        if (!secureUrl) {
+          throw new Error('Failed to generate secure URL');
+        }
+
+        console.log('Generated secure URL for photo:', photoId, secureUrl);
 
         const img = new Image();
         img.crossOrigin = 'anonymous';
         
         img.onload = () => {
+          console.log('Image loaded successfully for photo:', photoId);
           const canvas = canvasRef.current;
-          if (!canvas) return;
+          if (!canvas) {
+            console.error('Canvas not available');
+            return;
+          }
 
           const ctx = canvas.getContext('2d');
-          if (!ctx) return;
+          if (!ctx) {
+            console.error('Canvas context not available');
+            return;
+          }
 
           // Set canvas size
           canvas.width = img.width;
@@ -134,14 +140,16 @@ const SecureImage: React.FC<SecureImageProps> = ({
           setIsLoading(false);
         };
 
-        img.onerror = () => {
-          console.error('Failed to load secure image');
+        img.onerror = (error) => {
+          console.error('Failed to load secure image for photo:', photoId, error);
+          setLoadError('Failed to load image');
           setIsLoading(false);
         };
 
         img.src = secureUrl;
       } catch (error) {
-        console.error('Error loading secure image:', error);
+        console.error('Error loading secure image for photo:', photoId, error);
+        setLoadError(error instanceof Error ? error.message : 'Unknown error');
         setIsLoading(false);
       }
     };
@@ -227,6 +235,14 @@ const SecureImage: React.FC<SecureImageProps> = ({
     );
   }
 
+  if (loadError) {
+    return (
+      <div className={cn("bg-red-900/20 rounded-lg flex items-center justify-center border border-red-500/20", className)}>
+        <p className="text-red-300 text-sm">{loadError}</p>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative inline-block", className)}>
       <canvas
@@ -234,7 +250,6 @@ const SecureImage: React.FC<SecureImageProps> = ({
         onClick={handleCanvasClick}
         className={cn(
           "block cursor-pointer transition-all duration-300 max-w-full h-auto",
-          isBlurred && "blur-md",
           isLoading && "opacity-50"
         )}
         style={{
