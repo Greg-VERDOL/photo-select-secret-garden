@@ -9,40 +9,50 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
 
   // Initialize viewing session
   useEffect(() => {
-    if (!galleryId || !clientEmail) {
-      console.warn('🔄 Skipping session initialization: Missing galleryId or clientEmail.', { galleryId: !!galleryId, clientEmail: !!clientEmail });
+    if (!galleryId) {
+      console.warn('🔄 Skipping session initialization: Missing galleryId.');
       setIsSessionValid(false);
       setIsSessionLoading(false);
       return;
     }
+    
+    // Ensure we have a valid client email, use 'anonymous' as fallback
+    const effectiveClientEmail = clientEmail && clientEmail.trim() !== '' ? clientEmail : 'anonymous';
+    
+    console.log('🔄 Initializing secure viewing session for gallery:', galleryId, 'client:', effectiveClientEmail);
     setIsSessionLoading(true);
-    console.log('🔄 Initializing secure viewing session for gallery:', galleryId, 'client:', clientEmail);
-    initializeSession();
+    initializeSession(effectiveClientEmail);
   }, [galleryId, clientEmail]);
 
-  const initializeSession = async () => {
-    if (!galleryId || !clientEmail) {
+  const initializeSession = async (effectiveClientEmail: string) => {
+    if (!galleryId) {
       setIsSessionLoading(false);
       return;
     }
 
     try {
       console.log('🔍 Checking for existing session...');
+      
+      // Clean up expired sessions first
+      await cleanupExpiredSessions(galleryId, effectiveClientEmail);
+      
       // Check for existing valid session
       let { data: existingSession, error: sessionError } = await supabase
         .from('viewing_sessions')
         .select('*')
         .eq('gallery_id', galleryId)
-        .eq('client_email', clientEmail)
+        .eq('client_email', effectiveClientEmail)
         .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
 
-      if (sessionError && sessionError.code !== 'PGRST116') { // PGRST116: no rows found, which is fine
+      if (sessionError && sessionError.code !== 'PGRST116') {
         console.log('ℹ️ Error checking for existing session:', sessionError.message);
       }
 
       if (existingSession) {
-        console.log('✅ Found existing valid session:', existingSession.session_token);
+        console.log('✅ Found existing valid session:', existiveSession.session_token);
         setSessionToken(existingSession.session_token);
         setIsSessionValid(true);
       } else {
@@ -59,7 +69,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
           .from('viewing_sessions')
           .insert({
             gallery_id: galleryId,
-            client_email: clientEmail,
+            client_email: effectiveClientEmail,
             session_token: newSessionToken,
             ip_address: clientIP,
             user_agent: navigator.userAgent,
@@ -82,6 +92,25 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
       setIsSessionValid(false);
     } finally {
       setIsSessionLoading(false);
+    }
+  };
+
+  const cleanupExpiredSessions = async (galleryId: string, clientEmail: string) => {
+    try {
+      const { error } = await supabase
+        .from('viewing_sessions')
+        .delete()
+        .eq('gallery_id', galleryId)
+        .eq('client_email', clientEmail)
+        .lt('expires_at', new Date().toISOString());
+      
+      if (error) {
+        console.log('⚠️ Error cleaning up expired sessions:', error);
+      } else {
+        console.log('🧹 Cleaned up expired sessions');
+      }
+    } catch (error) {
+      console.log('⚠️ Error in cleanup:', error);
     }
   };
 
@@ -120,7 +149,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         .insert({
           gallery_id: galleryId,
           photo_id: photoId,
-          client_email: clientEmail,
+          client_email: clientEmail && clientEmail.trim() !== '' ? clientEmail : 'anonymous',
           access_token: accessToken,
           ip_address: await getClientIP(),
           user_agent: navigator.userAgent,
@@ -164,7 +193,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         .insert({
           gallery_id: galleryId,
           photo_id: photoId,
-          client_email: clientEmail,
+          client_email: clientEmail && clientEmail.trim() !== '' ? clientEmail : 'anonymous',
           ip_address: await getClientIP(),
           user_agent: navigator.userAgent,
           attempt_type: attemptType,

@@ -32,11 +32,14 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Verify the access token
+    // Verify the access token with proper JOIN
     console.log('🔍 Verifying access token...');
     const { data: accessLog, error: tokenError } = await supabase
       .from('image_access_logs')
-      .select('*, photos(storage_path)')
+      .select(`
+        *,
+        photos!inner(storage_path)
+      `)
       .eq('access_token', token)
       .eq('photo_id', photoId)
       .gte('expires_at', new Date().toISOString())
@@ -60,15 +63,15 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    if (!accessLog) {
-      console.error('❌ No access log found for token');
+    if (!accessLog || !accessLog.photos) {
+      console.error('❌ No access log or photo data found for token');
       return new Response('Invalid or expired token', { 
         status: 403, 
         headers: corsHeaders 
       });
     }
 
-    console.log('✅ Token verified, accessing photo:', accessLog.photos?.storage_path);
+    console.log('✅ Token verified, accessing photo:', accessLog.photos.storage_path);
 
     // Get the image from storage
     const { data: imageData, error: storageError } = await supabase.storage

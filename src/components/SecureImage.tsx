@@ -60,7 +60,10 @@ const SecureImage: React.FC<SecureImageProps> = ({
   if (!isSessionValid) {
     return (
       <div className={cn("bg-slate-800 rounded-lg flex items-center justify-center", className)}>
-        <p className="text-white text-sm">Session expired. Please refresh.</p>
+        <div className="text-center p-4">
+          <p className="text-amber-300 text-sm font-medium">Initializing secure session...</p>
+          <p className="text-slate-400 text-xs mt-1">Please wait while we set up secure viewing</p>
+        </div>
       </div>
     );
   }
@@ -68,7 +71,10 @@ const SecureImage: React.FC<SecureImageProps> = ({
   if (loadError) {
     return (
       <div className={cn("bg-red-900/20 rounded-lg flex items-center justify-center border border-red-500/20", className)}>
-        <p className="text-red-300 text-sm">{loadError}</p>
+        <div className="text-center p-4">
+          <p className="text-red-300 text-sm font-medium">Unable to load image</p>
+          <p className="text-red-400 text-xs mt-1">{loadError}</p>
+        </div>
       </div>
     );
   }
@@ -93,7 +99,10 @@ const SecureImage: React.FC<SecureImageProps> = ({
       
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50 rounded-lg">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-white text-xs mt-2">Loading secure image...</p>
+          </div>
         </div>
       )}
 

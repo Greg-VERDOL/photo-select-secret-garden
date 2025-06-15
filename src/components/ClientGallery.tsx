@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -34,7 +35,13 @@ const ClientGallery = () => {
     setPreviewPhoto
   } = useClientGalleryState();
 
-  const clientEmail = useMemo(() => clientInfo.email || gallery?.client_email || '', [clientInfo.email, gallery]);
+  // Resolve the client email with better fallback logic
+  const clientEmail = useMemo(() => {
+    const email = clientInfo.email || gallery?.client_email || '';
+    console.log('🔍 Resolved client email:', email, 'from clientInfo:', clientInfo.email, 'gallery:', gallery?.client_email);
+    return email;
+  }, [clientInfo.email, gallery?.client_email]);
+
   const { isSessionValid, isSessionLoading, generateSecureImageUrl, logDownloadAttempt } = useSecureViewing(gallery?.id || '', clientEmail);
 
   const { navigateFullscreen, navigatePreview } = usePhotoNavigation(photos);
@@ -65,7 +72,13 @@ const ClientGallery = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
-          <div className="text-xl">{loading ? t('clientGallery.loading') : 'Initializing secure session...'}</div>
+          <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-xl mb-2">
+            {loading ? t('clientGallery.loading') : 'Setting up secure session...'}
+          </div>
+          <div className="text-sm text-slate-300">
+            {loading ? 'Loading gallery data...' : 'Initializing encrypted viewing session for photo protection'}
+          </div>
         </div>
       </div>
     );
@@ -144,7 +157,7 @@ const ClientGallery = () => {
         photos={photos}
         onPhotoToggle={togglePhotoSelection}
         galleryId={gallery.id}
-        clientEmail={clientInfo.email || gallery.client_email || ''}
+        clientEmail={clientEmail}
         freePhotoLimit={gallery.free_photo_limit || 5}
         getPhotoUrl={getPhotoUrl}
       />
