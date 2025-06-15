@@ -89,7 +89,16 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
 
           {/* Payment Information */}
           {clientGroup.paymentInfo && (
-            <PaymentInfo paymentInfo={clientGroup.paymentInfo} />
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-medium text-white">Payment Information</span>
+              </div>
+              <div className="text-sm text-slate-300">
+                <p>Extra photos: {clientGroup.paymentInfo.extraPhotosCount}</p>
+                <p>Amount paid: €{(clientGroup.paymentInfo.amountPaid / 100).toFixed(2)}</p>
+              </div>
+            </div>
           )}
 
           {/* Photo Grid */}
@@ -98,7 +107,7 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
               <PhotoThumbnail
                 key={selection.id}
                 selection={selection}
-                getPhotoUrl={getPhotoUrl}
+                photoUrl={getPhotoUrl(selection.photo.storage_path)}
                 onPhotoClick={onPhotoClick}
               />
             ))}

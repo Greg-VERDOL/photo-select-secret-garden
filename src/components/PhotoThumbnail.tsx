@@ -22,14 +22,14 @@ interface PhotoSelection {
 interface PhotoThumbnailProps {
   selection: PhotoSelection;
   photoUrl: string;
-  onClick: () => void;
+  onPhotoClick: (selection: PhotoSelection) => void;
 }
 
-const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ selection, photoUrl, onClick }) => {
+const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ selection, photoUrl, onPhotoClick }) => {
   return (
     <div
       className="group relative aspect-square rounded-xl overflow-hidden bg-slate-800 cursor-pointer hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
-      onClick={onClick}
+      onClick={() => onPhotoClick(selection)}
     >
       <img
         src={photoUrl}
