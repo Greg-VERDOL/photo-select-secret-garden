@@ -52,7 +52,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
       }
 
       if (existingSession) {
-        console.log('✅ Found existing valid session:', existiveSession.session_token);
+        console.log('✅ Found existing valid session:', existingSession.session_token);
         setSessionToken(existingSession.session_token);
         setIsSessionValid(true);
       } else {
