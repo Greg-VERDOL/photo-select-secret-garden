@@ -91,7 +91,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
   const sendAdminNotification = async () => {
     try {
-      await supabase.functions.invoke('send-admin-notification', {
+      const { error } = await supabase.functions.invoke('send-admin-notification', {
         body: {
           galleryId,
           clientEmail: email.trim(),
@@ -108,9 +108,14 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           }))
         }
       });
-      console.log('Admin notification sent successfully');
+
+      if (error) {
+        console.warn('Failed to send admin notification:', error);
+      } else {
+        console.log('Admin notification sent successfully');
+      }
     } catch (error) {
-      console.error('Failed to send admin notification:', error);
+      console.warn('Failed to send admin notification:', error);
       // Don't block the main flow if notification fails
     }
   };

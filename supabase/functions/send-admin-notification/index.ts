@@ -87,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Payment required: €${notificationData.totalCost.toFixed(2)} for ${notificationData.extraPhotosCount} extra photos`
       : 'No payment required (within free limit)';
 
-    const adminPanelUrl = `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/admin`;
+    const adminPanelUrl = `https://avmbtikrdufrrdpgrqgw.supabase.co`.replace('supabase.co', 'lovable.app') + '/admin';
 
     const emailContent = `
       <h2>New Photo Selection Received</h2>
