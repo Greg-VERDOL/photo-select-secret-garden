@@ -1,189 +1,92 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Gallery } from './useGalleryData';
 
-interface PhotoSelection {
-  id: string;
-  selected_at: string;
-  client_email: string;
-  photo: {
-    id: string;
-    filename: string;
-    title: string;
-    storage_path: string;
-  };
-  gallery: {
-    id: string;
-    name: string;
-    client_name: string;
-    free_photo_limit: number;
-  };
-}
-
-interface PaymentInfo {
-  extraPhotosCount: number;
-  amountPaid: number;
-  currency: string;
-}
-
-interface ClientSelections {
-  clientName: string;
-  clientEmail: string;
-  galleryName: string;
-  galleryId: string;
-  freePhotoLimit: number;
-  selections: PhotoSelection[];
-  paymentInfo?: PaymentInfo;
-}
-
-export const usePhotoSelections = () => {
-  const [selections, setSelections] = useState<PhotoSelection[]>([]);
-  const [groupedSelections, setGroupedSelections] = useState<ClientSelections[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+export const usePhotoSelections = (gallery: Gallery | null) => {
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [clientInfo, setClientInfo] = useState({ name: '', email: '' });
   const { toast } = useToast();
 
-  const fetchPaymentInfo = async (galleryId: string, clientEmail: string): Promise<PaymentInfo | undefined> => {
-    try {
-      const { data, error } = await supabase
-        .from('payment_sessions')
-        .select('extra_photos_count, amount_cents')
-        .eq('gallery_id', galleryId)
-        .eq('client_email', clientEmail)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1);
+  // Save selections to localStorage whenever they change
+  useEffect(() => {
+    if (gallery && selectedPhotos.size > 0) {
+      const selectionData = {
+        galleryId: gallery.id,
+        accessCode: gallery.access_code,
+        selectedPhotos: Array.from(selectedPhotos),
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`gallery_selections_${gallery.access_code}`, JSON.stringify(selectionData));
+    }
+  }, [selectedPhotos, gallery]);
 
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        return {
-          extraPhotosCount: data[0].extra_photos_count,
-          amountPaid: data[0].amount_cents,
-          currency: 'EUR'
-        };
+  // Load saved selections when gallery is loaded
+  useEffect(() => {
+    if (gallery) {
+      loadSavedSelections();
+    }
+  }, [gallery]);
+
+  const loadSavedSelections = () => {
+    if (!gallery) return;
+    
+    try {
+      const savedData = localStorage.getItem(`gallery_selections_${gallery.access_code}`);
+      if (savedData) {
+        const selectionData = JSON.parse(savedData);
+        
+        // Check if the saved data is for the same gallery and not too old (24 hours)
+        const isValidData = selectionData.galleryId === gallery.id && 
+                           selectionData.accessCode === gallery.access_code &&
+                           (Date.now() - selectionData.timestamp) < 24 * 60 * 60 * 1000;
+        
+        if (isValidData && selectionData.selectedPhotos && Array.isArray(selectionData.selectedPhotos)) {
+          const savedSelections = new Set<string>(selectionData.selectedPhotos);
+          setSelectedPhotos(savedSelections);
+          
+          if (savedSelections.size > 0) {
+            toast({
+              title: "Selections restored",
+              description: `Found ${savedSelections.size} previously selected photos`,
+            });
+          }
+        }
       }
     } catch (error) {
-      console.error('Error fetching payment info:', error);
+      console.error('Error loading saved selections:', error);
     }
-    return undefined;
   };
 
-  const groupSelectionsByClient = async () => {
-    const grouped = selections.reduce((acc, selection) => {
-      const key = `${selection.gallery.client_name}-${selection.client_email}-${selection.gallery.id}`;
-      
-      if (!acc[key]) {
-        acc[key] = {
-          clientName: selection.gallery.client_name,
-          clientEmail: selection.client_email,
-          galleryName: selection.gallery.name,
-          galleryId: selection.gallery.id,
-          freePhotoLimit: selection.gallery.free_photo_limit || 5,
-          selections: []
-        };
-      }
-      
-      acc[key].selections.push(selection);
-      return acc;
-    }, {} as Record<string, ClientSelections>);
-
-    const groupsWithPaymentInfo = await Promise.all(
-      Object.values(grouped).map(async (group) => {
-        const paymentInfo = await fetchPaymentInfo(group.galleryId, group.clientEmail);
-        return { ...group, paymentInfo };
-      })
-    );
-
-    setGroupedSelections(groupsWithPaymentInfo);
-  };
-
-  const fetchSelections = async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
+  const togglePhotoSelection = (photoId: string) => {
+    const newSelected = new Set(selectedPhotos);
+    if (newSelected.has(photoId)) {
+      newSelected.delete(photoId);
     } else {
-      setRefreshing(true);
+      newSelected.add(photoId);
     }
-
-    try {
-      const { data, error } = await supabase
-        .from('photo_selections')
-        .select(`
-          id,
-          selected_at,
-          client_email,
-          photo:photos(id, filename, title, storage_path),
-          gallery:galleries(id, name, client_name, free_photo_limit)
-        `)
-        .order('selected_at', { ascending: false });
-
-      if (error) throw error;
-      setSelections(data || []);
-    } catch (error) {
-      if (!silent) {
-        toast({
-          title: "Error fetching selections",
-          description: "Failed to load photo selections",
-          variant: "destructive"
-        });
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleManualRefresh = () => {
-    fetchSelections();
+    setSelectedPhotos(newSelected);
+    
     toast({
-      title: "Refreshed",
-      description: "Photo selections have been updated",
+      title: newSelected.has(photoId) ? "Photo added to selection" : "Photo removed from selection",
+      duration: 2000,
     });
   };
 
+  // Pre-fill client info if available
   useEffect(() => {
-    fetchSelections();
-    
-    const interval = setInterval(() => {
-      fetchSelections(true);
-    }, 30000);
-
-    const channel = supabase
-      .channel('photo-selections-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'photo_selections'
-        },
-        () => {
-          fetchSelections(true);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (selections.length > 0) {
-      groupSelectionsByClient();
-    } else {
-      setGroupedSelections([]);
+    if (gallery && (gallery.client_name || gallery.client_email)) {
+      setClientInfo({
+        name: gallery.client_name || '',
+        email: gallery.client_email || ''
+      });
     }
-  }, [selections]);
+  }, [gallery]);
 
   return {
-    groupedSelections,
-    loading,
-    refreshing,
-    handleManualRefresh
+    selectedPhotos,
+    clientInfo,
+    togglePhotoSelection,
+    setClientInfo
   };
 };
-
-export type { PhotoSelection, ClientSelections, PaymentInfo };
