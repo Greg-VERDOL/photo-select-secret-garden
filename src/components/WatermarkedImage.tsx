@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WatermarkedImageProps {
   src: string;
@@ -17,6 +18,37 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
   onClick, 
   fitContainer = false 
 }) => {
+  const [watermarkText, setWatermarkText] = useState('© PHOTO STUDIO');
+  const [watermarkStyle, setWatermarkStyle] = useState('corners');
+
+  useEffect(() => {
+    fetchWatermarkSettings();
+  }, []);
+
+  const fetchWatermarkSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .in('key', ['watermark_text', 'watermark_style']);
+
+      if (error) throw error;
+
+      data.forEach(setting => {
+        if (setting.key === 'watermark_text') {
+          setWatermarkText(setting.value);
+        } else if (setting.key === 'watermark_style') {
+          setWatermarkStyle(setting.value);
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching watermark settings:', error);
+    }
+  };
+
+  const showCorners = watermarkStyle === 'corners' || watermarkStyle === 'full';
+  const showCenter = watermarkStyle === 'center' || watermarkStyle === 'full';
+
   return (
     <div className={cn("relative inline-block", className)} onClick={onClick}>
       <img 
@@ -35,18 +67,25 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
       
       {/* Watermark overlay */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Multiple watermarks for better protection */}
-        <div className="absolute top-4 left-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
-          © PHOTO STUDIO
-        </div>
+        {/* Corner watermarks */}
+        {showCorners && (
+          <>
+            <div className="absolute top-4 left-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
+              {watermarkText}
+            </div>
+            
+            <div className="absolute bottom-4 right-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
+              {watermarkText}
+            </div>
+          </>
+        )}
         
-        <div className="absolute bottom-4 right-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
-          © PHOTO STUDIO
-        </div>
-        
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl font-bold backdrop-blur-sm bg-black/10 px-4 py-2 rounded rotate-12">
-          PROOF
-        </div>
+        {/* Center watermark */}
+        {showCenter && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl font-bold backdrop-blur-sm bg-black/10 px-4 py-2 rounded rotate-12">
+            PROOF
+          </div>
+        )}
         
         {/* Subtle pattern overlay to make screenshot editing harder */}
         <div 

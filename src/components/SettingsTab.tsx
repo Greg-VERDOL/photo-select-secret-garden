@@ -3,13 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, DollarSign, CreditCard, CheckCircle, XCircle } from 'lucide-react';
+import { Settings, DollarSign, CreditCard, CheckCircle, XCircle, Image } from 'lucide-react';
 
 const SettingsTab: React.FC = () => {
   const [pricePerPhoto, setPricePerPhoto] = useState<string>('5.00');
   const [isStripeConnected, setIsStripeConnected] = useState(false);
+  const [watermarkText, setWatermarkText] = useState<string>('© PHOTO STUDIO');
+  const [watermarkStyle, setWatermarkStyle] = useState<string>('corners');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
@@ -24,7 +27,7 @@ const SettingsTab: React.FC = () => {
       const { data, error } = await supabase
         .from('app_settings')
         .select('key, value')
-        .in('key', ['price_per_extra_photo_cents', 'stripe_connected']);
+        .in('key', ['price_per_extra_photo_cents', 'stripe_connected', 'watermark_text', 'watermark_style']);
 
       if (error) throw error;
 
@@ -33,6 +36,10 @@ const SettingsTab: React.FC = () => {
           setPricePerPhoto((parseInt(setting.value) / 100).toFixed(2));
         } else if (setting.key === 'stripe_connected') {
           setIsStripeConnected(setting.value === 'true');
+        } else if (setting.key === 'watermark_text') {
+          setWatermarkText(setting.value);
+        } else if (setting.key === 'watermark_style') {
+          setWatermarkStyle(setting.value);
         }
       });
     } catch (error) {
@@ -51,18 +58,23 @@ const SettingsTab: React.FC = () => {
     try {
       const priceInCents = Math.round(parseFloat(pricePerPhoto) * 100);
       
-      const { error } = await supabase
-        .from('app_settings')
-        .upsert({
-          key: 'price_per_extra_photo_cents',
-          value: priceInCents.toString()
-        }, { onConflict: 'key' });
+      const settingsToUpdate = [
+        { key: 'price_per_extra_photo_cents', value: priceInCents.toString() },
+        { key: 'watermark_text', value: watermarkText },
+        { key: 'watermark_style', value: watermarkStyle }
+      ];
 
-      if (error) throw error;
+      for (const setting of settingsToUpdate) {
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert(setting, { onConflict: 'key' });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Settings saved",
-        description: "Pricing settings have been updated successfully",
+        description: "All settings have been updated successfully",
       });
     } catch (error) {
       toast({
@@ -148,6 +160,50 @@ const SettingsTab: React.FC = () => {
         </div>
       </div>
 
+      {/* Watermark Settings */}
+      <Card className="bg-white/5 border-white/10 backdrop-blur-xl rounded-2xl p-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <Image className="w-6 h-6 text-purple-400" />
+          <h2 className="text-xl font-semibold text-white">Watermark Configuration</h2>
+        </div>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Watermark Text
+            </label>
+            <Input
+              type="text"
+              value={watermarkText}
+              onChange={(e) => setWatermarkText(e.target.value)}
+              className="bg-slate-700 border-slate-600 text-white"
+              placeholder="© PHOTO STUDIO"
+            />
+            <p className="text-sm text-slate-400 mt-2">
+              This text will appear as a watermark on all gallery images
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Watermark Style
+            </label>
+            <select
+              value={watermarkStyle}
+              onChange={(e) => setWatermarkStyle(e.target.value)}
+              className="w-full h-10 px-3 py-2 rounded-md border border-slate-600 bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="corners">Corners Only</option>
+              <option value="center">Center Only</option>
+              <option value="full">Full (Corners + Center)</option>
+            </select>
+            <p className="text-sm text-slate-400 mt-2">
+              Choose how the watermark appears on images
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* Pricing Settings */}
       <Card className="bg-white/5 border-white/10 backdrop-blur-xl rounded-2xl p-8">
         <div className="flex items-center space-x-3 mb-6">
@@ -175,13 +231,6 @@ const SettingsTab: React.FC = () => {
                   />
                 </div>
               </div>
-              <Button
-                onClick={saveSettings}
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </Button>
             </div>
             <p className="text-sm text-slate-400 mt-2">
               Clients will be charged this amount in EUR for each photo selected beyond their free limit
@@ -225,6 +274,17 @@ const SettingsTab: React.FC = () => {
           </Button>
         </div>
       </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-center">
+        <Button
+          onClick={saveSettings}
+          disabled={saving}
+          className="bg-blue-600 hover:bg-blue-700 px-8 py-3"
+        >
+          {saving ? 'Saving...' : 'Save All Settings'}
+        </Button>
+      </div>
     </div>
   );
 };
