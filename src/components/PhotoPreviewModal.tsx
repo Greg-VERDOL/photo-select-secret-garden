@@ -79,7 +79,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
                   className={`${
                     isSelected 
                       ? "bg-red-500 hover:bg-red-600 text-white" 
-                      : "border-slate-600 text-slate-300 hover:bg-slate-700"
+                      : "border-slate-600 text-black hover:bg-slate-700 hover:text-white bg-white"
                   }`}
                 >
                   <Heart className={`w-4 h-4 mr-1 ${isSelected ? 'fill-current' : ''}`} />
