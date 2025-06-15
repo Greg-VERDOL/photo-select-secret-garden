@@ -1,3 +1,4 @@
+
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
 }) => {
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!isOpen || !onNavigate) return;
-    
+
     if (event.key === 'ArrowLeft') {
       event.preventDefault();
       onNavigate('prev');
@@ -62,10 +63,13 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[100vw] max-h-[100vh] w-full h-full bg-black/95 border-none p-0 m-0">
+      <DialogContent
+        className="fixed inset-0 max-w-none max-h-none w-full h-full bg-black/95 border-none p-0 m-0 flex items-center justify-center overflow-hidden"
+        style={{ borderRadius: 0 }}
+      >
         {/* Header with controls */}
         <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
-          <div className="text-white text-sm md:text-base">
+          <div className="text-white text-sm md:text-base truncate max-w-[80vw]">
             {photo.title || photo.filename}
             {photos.length > 1 && (
               <span className="ml-2 text-white/70">
@@ -73,7 +77,6 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
               </span>
             )}
           </div>
-          
           <div className="flex items-center gap-2">
             {allowDownload && onDownload && (
               <Button
@@ -108,7 +111,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
             <ChevronLeft className="w-6 h-6" />
           </Button>
         )}
-        
+
         {onNavigate && canNavigateNext && (
           <Button
             size="lg"
@@ -120,12 +123,12 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           </Button>
         )}
 
-        {/* Image container that fits within viewport */}
-        <div className="w-full h-full flex items-center justify-center pt-16 pb-4 px-4">
+        {/* Image container */}
+        <div className="w-full h-full flex items-center justify-center">
           <WatermarkedImage
             src={getPhotoUrl(photo.storage_path)}
             alt={photo.title || photo.filename}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-[96vw] max-h-[88vh] object-contain mx-auto my-auto"
           />
         </div>
       </DialogContent>
