@@ -23,8 +23,8 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
   const { downloadingClient, downloadClientSelections } = usePhotoDownload();
   const isDownloading = downloadingClient === clientGroup.clientName;
 
-  const handleDownload = (unwatermarked: boolean = false) => {
-    downloadClientSelections(clientGroup, unwatermarked);
+  const handleDownload = () => {
+    downloadClientSelections(clientGroup, true);
   };
 
   return (
@@ -66,28 +66,16 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
               </div>
             </div>
 
-            {/* Download Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={() => handleDownload(false)}
-                disabled={isDownloading}
-                variant="outline"
-                size="sm"
-                className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {isDownloading ? 'Downloading...' : 'Download Watermarked'}
-              </Button>
-              <Button
-                onClick={() => handleDownload(true)}
-                disabled={isDownloading}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {isDownloading ? 'Downloading...' : 'Download Original'}
-              </Button>
-            </div>
+            {/* Download Button */}
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isDownloading ? 'Downloading...' : 'Download Photos'}
+            </Button>
           </div>
 
           {/* Payment Information */}
