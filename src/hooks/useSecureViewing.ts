@@ -8,13 +8,15 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
 
   // Initialize viewing session
   useEffect(() => {
+    console.log('🔄 Initializing secure viewing session for gallery:', galleryId, 'client:', clientEmail);
     initializeSession();
   }, [galleryId, clientEmail]);
 
   const initializeSession = async () => {
     try {
+      console.log('🔍 Checking for existing session...');
       // Check for existing valid session
-      let { data: existingSession } = await supabase
+      let { data: existingSession, error: sessionError } = await supabase
         .from('viewing_sessions')
         .select('*')
         .eq('gallery_id', galleryId)
@@ -22,16 +24,25 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         .gt('expires_at', new Date().toISOString())
         .single();
 
+      if (sessionError) {
+        console.log('ℹ️ No existing session found:', sessionError.message);
+      }
+
       if (existingSession) {
+        console.log('✅ Found existing valid session:', existingSession.session_token);
         setSessionToken(existingSession.session_token);
         setIsSessionValid(true);
         return;
       }
 
       // Create new session
+      console.log('🆕 Creating new viewing session...');
       const newSessionToken = generateSessionToken();
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour session
+
+      const clientIP = await getClientIP();
+      console.log('🌐 Client IP:', clientIP);
 
       const { error } = await supabase
         .from('viewing_sessions')
@@ -39,19 +50,23 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
           gallery_id: galleryId,
           client_email: clientEmail,
           session_token: newSessionToken,
-          ip_address: await getClientIP(),
+          ip_address: clientIP,
           user_agent: navigator.userAgent,
           expires_at: expiresAt.toISOString(),
           max_views: 1000,
           current_views: 0
         });
 
-      if (!error) {
+      if (error) {
+        console.error('❌ Failed to create viewing session:', error);
+        setIsSessionValid(false);
+      } else {
+        console.log('✅ Created new session:', newSessionToken);
         setSessionToken(newSessionToken);
         setIsSessionValid(true);
       }
     } catch (error) {
-      console.error('Error initializing secure viewing session:', error);
+      console.error('❌ Error initializing secure viewing session:', error);
       setIsSessionValid(false);
     }
   };
@@ -71,8 +86,10 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
   };
 
   const generateSecureImageUrl = useCallback(async (photoId: string, storagePath: string): Promise<string | null> => {
+    console.log('🔐 Generating secure image URL for photo:', photoId);
+    
     if (!sessionToken || !isSessionValid) {
-      console.error('No valid session for image access');
+      console.error('❌ No valid session for image access. SessionToken:', !!sessionToken, 'IsValid:', isSessionValid);
       return null;
     }
 
@@ -82,6 +99,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 30); // 30 minute expiry
 
+      console.log('📝 Creating image access log...');
       // Log the image access attempt
       const { error: logError } = await supabase
         .from('image_access_logs')
@@ -96,24 +114,27 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         });
 
       if (logError) {
-        console.error('Error logging image access:', logError);
+        console.error('❌ Error logging image access:', logError);
         return null;
       }
 
+      console.log('📈 Incrementing session views...');
       // Increment session view count using the database function
       const { error: updateError } = await supabase.rpc('increment_session_views', {
         p_session_token: sessionToken
       });
 
       if (updateError) {
-        console.error('Error incrementing session views:', updateError);
+        console.error('❌ Error incrementing session views:', updateError);
       }
 
       // Return the secure proxy URL
       const supabaseUrl = 'https://avmbtikrdufrrdpgrqgw.supabase.co';
-      return `${supabaseUrl}/functions/v1/secure-image-proxy?token=${accessToken}&photo_id=${photoId}`;
+      const secureUrl = `${supabaseUrl}/functions/v1/secure-image-proxy?token=${accessToken}&photo_id=${photoId}`;
+      console.log('✅ Generated secure proxy URL for photo:', photoId);
+      return secureUrl;
     } catch (error) {
-      console.error('Error generating secure image URL:', error);
+      console.error('❌ Error generating secure image URL:', error);
       return null;
     }
   }, [sessionToken, isSessionValid, galleryId, clientEmail]);
@@ -136,9 +157,9 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
           blocked: true
         });
 
-      console.warn(`Blocked ${attemptType} attempt for photo ${photoId}`);
+      console.warn(`🚫 Blocked ${attemptType} attempt for photo ${photoId}`);
     } catch (error) {
-      console.error('Error logging download attempt:', error);
+      console.error('❌ Error logging download attempt:', error);
     }
   }, [galleryId, clientEmail]);
 

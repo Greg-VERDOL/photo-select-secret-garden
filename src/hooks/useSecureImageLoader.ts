@@ -30,8 +30,12 @@ export const useSecureImageLoader = ({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadSecureImage = useCallback(async () => {
+    console.log('🔄 Starting image load for photo:', photoId);
+    
     if (!isSessionValid) {
-      console.log('Session not valid for photo:', photoId);
+      console.log('❌ Session not valid for photo:', photoId);
+      setLoadError('Session expired. Please refresh.');
+      setIsLoading(false);
       return;
     }
     
@@ -39,29 +43,34 @@ export const useSecureImageLoader = ({
     setLoadError(null);
     
     try {
-      console.log('Loading secure image for photo:', photoId);
+      console.log('🔐 Generating secure URL for photo:', photoId);
       const secureUrl = await generateSecureImageUrl(photoId, storagePath);
       
       if (!secureUrl) {
+        console.error('❌ Failed to generate secure URL for photo:', photoId);
         throw new Error('Failed to generate secure URL');
       }
 
-      console.log('Generated secure URL for photo:', photoId, secureUrl);
+      console.log('✅ Generated secure URL for photo:', photoId, secureUrl.substring(0, 100) + '...');
 
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
       img.onload = () => {
-        console.log('Image loaded successfully for photo:', photoId);
+        console.log('✅ Image loaded successfully for photo:', photoId, 'Size:', img.width, 'x', img.height);
         const canvas = canvasRef.current;
         if (!canvas) {
-          console.error('Canvas not available');
+          console.error('❌ Canvas not available for photo:', photoId);
+          setLoadError('Canvas not available');
+          setIsLoading(false);
           return;
         }
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          console.error('Canvas context not available');
+          console.error('❌ Canvas context not available for photo:', photoId);
+          setLoadError('Canvas context not available');
+          setIsLoading(false);
           return;
         }
 
@@ -73,6 +82,7 @@ export const useSecureImageLoader = ({
         ctx.drawImage(img, 0, 0);
 
         // Add dynamic watermarks
+        console.log('🎨 Adding watermarks to photo:', photoId);
         addWatermarks(ctx, canvas.width, canvas.height, {
           watermarkText,
           centerWatermarkText,
@@ -83,18 +93,21 @@ export const useSecureImageLoader = ({
         // Add noise pattern to make reverse engineering harder
         addNoisePattern(ctx, canvas.width, canvas.height);
 
+        console.log('✅ Image processing complete for photo:', photoId);
         setIsLoading(false);
       };
 
       img.onerror = (error) => {
-        console.error('Failed to load secure image for photo:', photoId, error);
+        console.error('❌ Failed to load secure image for photo:', photoId, error);
+        console.error('Image URL:', secureUrl);
         setLoadError('Failed to load image');
         setIsLoading(false);
       };
 
+      console.log('📡 Starting image download for photo:', photoId);
       img.src = secureUrl;
     } catch (error) {
-      console.error('Error loading secure image for photo:', photoId, error);
+      console.error('❌ Error in loadSecureImage for photo:', photoId, error);
       setLoadError(error instanceof Error ? error.message : 'Unknown error');
       setIsLoading(false);
     }
