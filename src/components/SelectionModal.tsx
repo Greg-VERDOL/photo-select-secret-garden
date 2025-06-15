@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Heart, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useParams } from 'react-router-dom';
 import EmailFormModal from './EmailFormModal';
 import PricingInfo from './PricingInfo';
 import SelectedPhotosGrid from './SelectedPhotosGrid';
@@ -40,6 +41,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   freePhotoLimit,
   getPhotoUrl,
 }) => {
+  const { accessCode } = useParams<{ accessCode: string }>();
   const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -68,6 +70,12 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const totalCost = extraPhotosCount * pricePerPhoto;
   const needsPayment = extraPhotosCount > 0;
   const needsEmail = (!clientEmail || clientEmail.trim() === '');
+
+  const clearSavedSelections = () => {
+    if (accessCode) {
+      localStorage.removeItem(`gallery_selections_${accessCode}`);
+    }
+  };
 
   const handleSubmit = async () => {
     if (needsEmail) {
@@ -212,6 +220,9 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       };
       
       localStorage.setItem('completedSelections', JSON.stringify(completedSelections));
+
+      // Clear the saved selections since they're now submitted
+      clearSavedSelections();
 
       toast({
         title: "Selections saved!",

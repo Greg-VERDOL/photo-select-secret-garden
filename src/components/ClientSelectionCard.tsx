@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Calendar, Image as ImageIcon, Heart, Download } from 'lucide-react';
 import PhotoThumbnail from './PhotoThumbnail';
+import PaymentInfo from './PaymentInfo';
 
 interface PhotoSelection {
   id: string;
@@ -22,11 +23,20 @@ interface PhotoSelection {
   };
 }
 
+interface PaymentInfo {
+  extraPhotosCount: number;
+  amountPaid: number;
+  currency: string;
+}
+
 interface ClientSelections {
   clientName: string;
   clientEmail: string;
   galleryName: string;
+  galleryId: string;
+  freePhotoLimit: number;
   selections: PhotoSelection[];
+  paymentInfo?: PaymentInfo;
 }
 
 interface ClientSelectionCardProps {
@@ -44,6 +54,8 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
   onDownloadAll,
   downloadingClient
 }) => {
+  const extraPhotosCount = Math.max(0, clientGroup.selections.length - clientGroup.freePhotoLimit);
+  
   return (
     <Card className="bg-white/3 border-white/10 backdrop-blur-xl rounded-2xl overflow-hidden">
       {/* Client Header */}
@@ -55,8 +67,8 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
             </div>
             <div>
               <h3 className="text-2xl font-medium text-white mb-1">{clientGroup.clientName}</h3>
-              <p className="text-slate-400 mb-1">{clientGroup.clientEmail}</p>
-              <div className="flex items-center space-x-4 text-sm text-slate-500">
+              <p className="text-slate-400 mb-2">{clientGroup.clientEmail}</p>
+              <div className="flex items-center space-x-4 text-sm text-slate-500 mb-2">
                 <span className="flex items-center space-x-1">
                   <ImageIcon className="w-4 h-4" />
                   <span>{clientGroup.galleryName}</span>
@@ -66,6 +78,11 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
                   <span>{clientGroup.selections.length} selected</span>
                 </span>
               </div>
+              <PaymentInfo
+                extraPhotosCount={extraPhotosCount}
+                amountPaid={clientGroup.paymentInfo?.amountPaid}
+                currency={clientGroup.paymentInfo?.currency}
+              />
             </div>
           </div>
           

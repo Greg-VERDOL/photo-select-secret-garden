@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,14 +23,24 @@ interface PhotoSelection {
     id: string;
     name: string;
     client_name: string;
+    free_photo_limit: number;
   };
+}
+
+interface PaymentInfo {
+  extraPhotosCount: number;
+  amountPaid: number;
+  currency: string;
 }
 
 interface ClientSelections {
   clientName: string;
   clientEmail: string;
   galleryName: string;
+  galleryId: string;
+  freePhotoLimit: number;
   selections: PhotoSelection[];
+  paymentInfo?: PaymentInfo;
 }
 
 const PhotoSelectionsTab: React.FC = () => {
@@ -94,7 +105,7 @@ const PhotoSelectionsTab: React.FC = () => {
           selected_at,
           client_email,
           photo:photos(id, filename, title, storage_path),
-          gallery:galleries(id, name, client_name)
+          gallery:galleries(id, name, client_name, free_photo_limit)
         `)
         .order('selected_at', { ascending: false });
 
@@ -114,6 +125,32 @@ const PhotoSelectionsTab: React.FC = () => {
     }
   };
 
+  const fetchPaymentInfo = async (galleryId: string, clientEmail: string): Promise<PaymentInfo | undefined> => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_sessions')
+        .select('extra_photos_count, amount_cents')
+        .eq('gallery_id', galleryId)
+        .eq('client_email', clientEmail)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        return {
+          extraPhotosCount: data[0].extra_photos_count,
+          amountPaid: data[0].amount_cents,
+          currency: 'EUR'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching payment info:', error);
+    }
+    return undefined;
+  };
+
   const handleManualRefresh = () => {
     fetchSelections();
     toast({
@@ -122,15 +159,17 @@ const PhotoSelectionsTab: React.FC = () => {
     });
   };
 
-  const groupSelectionsByClient = () => {
+  const groupSelectionsByClient = async () => {
     const grouped = selections.reduce((acc, selection) => {
-      const key = `${selection.gallery.client_name}-${selection.client_email}`;
+      const key = `${selection.gallery.client_name}-${selection.client_email}-${selection.gallery.id}`;
       
       if (!acc[key]) {
         acc[key] = {
           clientName: selection.gallery.client_name,
           clientEmail: selection.client_email,
           galleryName: selection.gallery.name,
+          galleryId: selection.gallery.id,
+          freePhotoLimit: selection.gallery.free_photo_limit || 5,
           selections: []
         };
       }
@@ -139,7 +178,15 @@ const PhotoSelectionsTab: React.FC = () => {
       return acc;
     }, {} as Record<string, ClientSelections>);
 
-    setGroupedSelections(Object.values(grouped));
+    // Fetch payment information for each client group
+    const groupsWithPaymentInfo = await Promise.all(
+      Object.values(grouped).map(async (group) => {
+        const paymentInfo = await fetchPaymentInfo(group.galleryId, group.clientEmail);
+        return { ...group, paymentInfo };
+      })
+    );
+
+    setGroupedSelections(groupsWithPaymentInfo);
   };
 
   const getPhotoUrl = (storagePath: string) => {

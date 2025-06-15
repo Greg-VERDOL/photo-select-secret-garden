@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Mail, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
@@ -45,6 +46,56 @@ const ClientGallery = () => {
       fetchGalleryData();
     }
   }, [accessCode]);
+
+  // Save selections to localStorage whenever they change
+  useEffect(() => {
+    if (gallery && selectedPhotos.size > 0) {
+      const selectionData = {
+        galleryId: gallery.id,
+        accessCode: gallery.access_code,
+        selectedPhotos: Array.from(selectedPhotos),
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`gallery_selections_${gallery.access_code}`, JSON.stringify(selectionData));
+    }
+  }, [selectedPhotos, gallery]);
+
+  // Load saved selections when gallery is loaded
+  useEffect(() => {
+    if (gallery) {
+      loadSavedSelections();
+    }
+  }, [gallery]);
+
+  const loadSavedSelections = () => {
+    if (!gallery) return;
+    
+    try {
+      const savedData = localStorage.getItem(`gallery_selections_${gallery.access_code}`);
+      if (savedData) {
+        const selectionData = JSON.parse(savedData);
+        
+        // Check if the saved data is for the same gallery and not too old (24 hours)
+        const isValidData = selectionData.galleryId === gallery.id && 
+                           selectionData.accessCode === gallery.access_code &&
+                           (Date.now() - selectionData.timestamp) < 24 * 60 * 60 * 1000;
+        
+        if (isValidData && selectionData.selectedPhotos) {
+          const savedSelections = new Set(selectionData.selectedPhotos);
+          setSelectedPhotos(savedSelections);
+          
+          if (savedSelections.size > 0) {
+            toast({
+              title: "Selections restored",
+              description: `Found ${savedSelections.size} previously selected photos`,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved selections:', error);
+    }
+  };
 
   const fetchGalleryData = async () => {
     try {
