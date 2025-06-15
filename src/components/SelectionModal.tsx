@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -133,16 +132,16 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Use a transaction to ensure data consistency
-      const { error: transactionError } = await supabase.rpc('handle_photo_selections', {
+      // Use the database function to handle photo selections with proper transaction
+      const { error: transactionError } = await supabase.rpc('handle_photo_selections' as any, {
         p_gallery_id: galleryId,
         p_client_email: email.trim(),
         p_photo_ids: selectedPhotos
       });
 
       if (transactionError) {
-        // Fallback to manual transaction if the RPC doesn't exist
-        console.log('RPC not found, using manual transaction');
+        // Fallback to manual transaction if the RPC fails
+        console.log('RPC failed, using manual transaction:', transactionError);
         
         // First, delete all existing selections for this client and gallery
         const { error: deleteError } = await supabase

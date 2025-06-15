@@ -284,6 +284,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      handle_photo_selections: {
+        Args: {
+          p_gallery_id: string
+          p_client_email: string
+          p_photo_ids: string[]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
