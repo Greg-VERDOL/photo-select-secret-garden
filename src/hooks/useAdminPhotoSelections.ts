@@ -92,6 +92,32 @@ export const useAdminPhotoSelections = () => {
         return acc;
       }, []) || [];
 
+      // Fetch payment information for each client group
+      for (const group of grouped) {
+        const extraPhotosCount = Math.max(0, group.selections.length - group.freePhotoLimit);
+        
+        if (extraPhotosCount > 0) {
+          // Fetch payment session for this client and gallery
+          const { data: paymentSession, error: paymentError } = await supabase
+            .from('payment_sessions')
+            .select('amount_cents, status')
+            .eq('gallery_id', group.galleryId)
+            .eq('client_email', group.clientEmail)
+            .eq('status', 'completed')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!paymentError && paymentSession) {
+            group.paymentInfo = {
+              extraPhotosCount,
+              amountPaid: paymentSession.amount_cents,
+              currency: 'EUR'
+            };
+          }
+        }
+      }
+
       setGroupedSelections(grouped);
     } catch (error) {
       console.error('Error fetching photo selections:', error);
@@ -121,6 +147,13 @@ export const useAdminPhotoSelections = () => {
         event: '*',
         schema: 'public',
         table: 'photo_selections'
+      }, () => {
+        fetchPhotoSelections();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'payment_sessions'
       }, () => {
         fetchPhotoSelections();
       })
