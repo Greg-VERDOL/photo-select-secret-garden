@@ -23,7 +23,7 @@ const SelectionActions: React.FC<SelectionActionsProps> = ({
   onSubmit,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-600">
+    <div className="flex flex-col sm:flex-row gap-3">
       <Button
         onClick={onDownload}
         disabled={isDownloading || selectedPhotosCount === 0}
@@ -42,7 +42,7 @@ const SelectionActions: React.FC<SelectionActionsProps> = ({
         {extraPhotosCount > 0 ? (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Processing...' : `Pay €${totalCost} & Send Selection`}
+            {isSubmitting ? 'Processing...' : `Pay €${totalCost.toFixed(2)} & Send Selection`}
           </>
         ) : (
           <>

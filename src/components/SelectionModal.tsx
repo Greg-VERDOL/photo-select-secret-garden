@@ -43,7 +43,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [pricePerPhoto, setPricePerPhoto] = useState(5.00); // Default fallback
+  const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
   const { toast } = useToast();
 
   const selectedPhotoObjects = photos.filter(photo => selectedPhotos.includes(photo.id));
@@ -190,8 +190,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-800 border-slate-600 text-white overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] bg-slate-800 border-slate-600 text-white flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex justify-between items-center text-xl">
             Review Your Selection ({selectedPhotos.length} photos)
             <Button
@@ -205,14 +205,17 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2">
           {/* Selected Photos Grid */}
-          <SelectedPhotosGrid
-            photos={photos}
-            selectedPhotos={selectedPhotos}
-            onPhotoToggle={onPhotoToggle}
-            getPhotoUrl={getPhotoUrl}
-          />
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Selected Photos</h3>
+            <SelectedPhotosGrid
+              photos={photos}
+              selectedPhotos={selectedPhotos}
+              onPhotoToggle={onPhotoToggle}
+              getPhotoUrl={getPhotoUrl}
+            />
+          </div>
 
           {/* Pricing Information */}
           <PricingInfo
@@ -230,8 +233,10 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
             onEmailChange={setEmail}
             onMessageChange={setMessage}
           />
+        </div>
 
-          {/* Action Buttons */}
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex-shrink-0 pt-4 border-t border-slate-600">
           <SelectionActions
             selectedPhotosCount={selectedPhotos.length}
             extraPhotosCount={extraPhotosCount}
