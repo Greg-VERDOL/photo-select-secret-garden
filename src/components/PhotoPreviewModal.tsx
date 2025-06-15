@@ -1,5 +1,6 @@
 
 import React, { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
@@ -35,6 +36,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
   selectedPhotos = new Set(),
   onToggleSelection
 }) => {
+  const { t } = useTranslation();
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!isOpen || !onNavigate) return;
     
@@ -69,7 +71,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
       <DialogContent className="max-w-7xl max-h-[95vh] bg-slate-800 border-slate-600 text-white overflow-hidden p-0">
         <DialogHeader className="p-4 md:p-6 pb-0">
           <DialogTitle className="flex justify-between items-center">
-            <span className="sr-only">Photo Preview</span>
+            <span className="sr-only">{t('photoPreviewModal.title')}</span>
             <div className="flex items-center gap-2 ml-auto">
               {onToggleSelection && (
                 <Button
@@ -83,7 +85,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
                   }`}
                 >
                   <Heart className={`w-4 h-4 mr-1 ${isSelected ? 'fill-current' : ''}`} />
-                  {isSelected ? 'Selected' : 'Select'}
+                  {isSelected ? t('photoPreviewModal.selected') : t('photoPreviewModal.select')}
                 </Button>
               )}
               <Button
@@ -133,7 +135,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
                 className="border-slate-600 text-slate-300 hover:bg-slate-700 disabled:opacity-50"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
+                {t('photoPreviewModal.previous')}
               </Button>
               <Button
                 size="sm"
@@ -142,7 +144,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
                 disabled={!canNavigateNext}
                 className="border-slate-600 text-slate-300 hover:bg-slate-700 disabled:opacity-50"
               >
-                Next
+                {t('photoPreviewModal.next')}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
@@ -164,7 +166,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
           
           <div className="text-slate-400 text-xs text-center px-4">
             {photos.length > 1 && (
-              <p>Photo {currentIndex + 1} of {photos.length}</p>
+              <p>{t('photoPreviewModal.photoCount', { current: currentIndex + 1, total: photos.length })}</p>
             )}
           </div>
         </div>

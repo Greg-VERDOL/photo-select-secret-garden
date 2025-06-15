@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +19,7 @@ const PhotoSelectionModal: React.FC<PhotoSelectionModalProps> = ({
   photoTitle,
   clientName
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -37,7 +39,7 @@ const PhotoSelectionModal: React.FC<PhotoSelectionModalProps> = ({
         <div className="p-6">
           <div className="mb-4">
             <h3 className="text-xl font-semibold text-white">{photoTitle}</h3>
-            <p className="text-slate-400">Selected by {clientName}</p>
+            <p className="text-slate-400">{t('photoSelectionModal.selectedBy', { clientName })}</p>
           </div>
           
           <div className="flex justify-center">

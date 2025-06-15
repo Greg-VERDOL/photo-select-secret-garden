@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
 import { Gallery, Photo } from './useGalleryData';
 
@@ -7,6 +8,7 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [clientInfo, setClientInfo] = useState({ name: '', email: '' });
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
@@ -47,8 +49,8 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
           
           if (savedSelections.size > 0) {
             toast({
-              title: "Selections restored",
-              description: `Found ${savedSelections.size} previously selected photos`,
+              title: t('photoSelections.restored'),
+              description: t('photoSelections.restoredDescription', { count: savedSelections.size }),
             });
           }
         }
@@ -68,7 +70,7 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
     setSelectedPhotos(newSelected);
     
     toast({
-      title: newSelected.has(photoId) ? "Photo added to selection" : "Photo removed from selection",
+      title: newSelected.has(photoId) ? t('photoSelections.added') : t('photoSelections.removed'),
       duration: 2000,
     });
   };
@@ -78,8 +80,8 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
     setSelectedPhotos(allPhotoIds);
     
     toast({
-      title: "All photos selected",
-      description: `Selected ${photos.length} photos`,
+      title: t('photoSelections.allSelected'),
+      description: t('photoSelections.allSelectedDescription', { count: photos.length }),
       duration: 2000,
     });
   };
@@ -88,7 +90,7 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
     setSelectedPhotos(new Set());
     
     toast({
-      title: "All photos deselected",
+      title: t('photoSelections.allDeselected'),
       duration: 2000,
     });
   };

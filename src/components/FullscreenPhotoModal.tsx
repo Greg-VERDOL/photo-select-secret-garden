@@ -1,5 +1,6 @@
 
 import React, { useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,6 +30,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
   photos = [],
   onNavigate
 }) => {
+  const { t } = useTranslation();
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!isOpen || !onNavigate) return;
     
@@ -66,7 +68,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
             {photo.title || photo.filename}
             {photos.length > 1 && (
               <span className="ml-2 text-white/70">
-                ({currentIndex + 1} of {photos.length})
+                {t('fullscreenPhotoModal.photoCount', { current: currentIndex + 1, total: photos.length })}
               </span>
             )}
           </div>

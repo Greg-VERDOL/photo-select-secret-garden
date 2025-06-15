@@ -1,4 +1,3 @@
-
 {
   "createGalleryForm": {
     "galleryNameRequired": "Nom de la galerie requis",
@@ -165,5 +164,46 @@
   },
   "indexPage": {
     "loading": "Chargement..."
+  },
+  "selectionModal": {
+    "title": "Révisez votre sélection ({{count}} photos)",
+    "selectedPhotos": "Photos sélectionnées",
+    "emailRequired": "Email requis",
+    "emailRequiredDescription": "Veuillez saisir votre adresse e-mail",
+    "selectionSaved": "Sélection enregistrée !",
+    "paymentDescription": "Veuillez finaliser le paiement pour valider votre sélection",
+    "selectionSavedSuccess": "Votre sélection de photos a été enregistrée avec succès",
+    "error": "Erreur",
+    "errorDescription": "Échec de l'enregistrement de votre sélection. Veuillez réessayer."
+  },
+  "pricingInfo": {
+    "title": "Informations sur les prix",
+    "freePhotos": "Photos gratuites incluses : {{count}}",
+    "pricePerExtra": "Prix par photo supplémentaire : {{price}} €",
+    "photosSelected": "Photos sélectionnées : {{count}}",
+    "extraPhotos": "Photos supplémentaires : {{count}} ({{cost}} €)"
+  },
+  "photoSelections": {
+    "restored": "Sélections restaurées",
+    "restoredDescription": "{{count}} photos précédemment sélectionnées trouvées",
+    "added": "Photo ajoutée à la sélection",
+    "removed": "Photo retirée de la sélection",
+    "allSelected": "Toutes les photos sélectionnées",
+    "allSelectedDescription": "{{count}} photos sélectionnées",
+    "allDeselected": "Toutes les photos désélectionnées"
+  },
+  "photoPreviewModal": {
+    "title": "Aperçu de la photo",
+    "selected": "Sélectionnée",
+    "select": "Sélectionner",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "photoCount": "Photo {{current}} sur {{total}}"
+  },
+  "fullscreenPhotoModal": {
+    "photoCount": "({{current}} sur {{total}})"
+  },
+  "photoSelectionModal": {
+    "selectedBy": "Sélectionnée par {{clientName}}"
   }
 }

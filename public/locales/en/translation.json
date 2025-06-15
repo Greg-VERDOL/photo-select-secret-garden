@@ -1,4 +1,3 @@
-
 {
   "createGalleryForm": {
     "galleryNameRequired": "Gallery name required",
@@ -165,5 +164,46 @@
   },
   "indexPage": {
     "loading": "Loading..."
+  },
+  "selectionModal": {
+    "title": "Review Your Selection ({{count}} photos)",
+    "selectedPhotos": "Selected Photos",
+    "emailRequired": "Email required",
+    "emailRequiredDescription": "Please enter your email address",
+    "selectionSaved": "Selection saved!",
+    "paymentDescription": "Please complete payment to finalize your selection",
+    "selectionSavedSuccess": "Your photo selection has been saved successfully",
+    "error": "Error",
+    "errorDescription": "Failed to save your selection. Please try again."
+  },
+  "pricingInfo": {
+    "title": "Pricing Information",
+    "freePhotos": "Free photos included: {{count}}",
+    "pricePerExtra": "Price per extra photo: €{{price}}",
+    "photosSelected": "Photos selected: {{count}}",
+    "extraPhotos": "Extra photos: {{count}} (€{{cost}})"
+  },
+  "photoSelections": {
+    "restored": "Selections restored",
+    "restoredDescription": "Found {{count}} previously selected photos",
+    "added": "Photo added to selection",
+    "removed": "Photo removed from selection",
+    "allSelected": "All photos selected",
+    "allSelectedDescription": "Selected {{count}} photos",
+    "allDeselected": "All photos deselected"
+  },
+  "photoPreviewModal": {
+    "title": "Photo Preview",
+    "selected": "Selected",
+    "select": "Select",
+    "previous": "Previous",
+    "next": "Next",
+    "photoCount": "Photo {{current}} of {{total}}"
+  },
+  "fullscreenPhotoModal": {
+    "photoCount": "({{current}} of {{total}})"
+  },
+  "photoSelectionModal": {
+    "selectedBy": "Selected by {{clientName}}"
   }
 }

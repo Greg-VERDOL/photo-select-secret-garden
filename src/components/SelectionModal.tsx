@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
@@ -45,6 +46,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const selectedPhotoObjects = photos.filter(photo => selectedPhotos.includes(photo.id));
   const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
@@ -77,8 +79,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const handleSubmit = async () => {
     if (!email.trim()) {
       toast({
-        title: "Email required",
-        description: "Please enter your email address",
+        title: t('selectionModal.emailRequired'),
+        description: t('selectionModal.emailRequiredDescription'),
         variant: "destructive"
       });
       return;
@@ -124,18 +126,18 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       }
 
       toast({
-        title: "Selection saved!",
+        title: t('selectionModal.selectionSaved'),
         description: extraPhotosCount > 0 
-          ? "Please complete payment to finalize your selection"
-          : "Your photo selection has been saved successfully",
+          ? t('selectionModal.paymentDescription')
+          : t('selectionModal.selectionSavedSuccess'),
       });
 
       onClose();
     } catch (error) {
       console.error('Error saving selection:', error);
       toast({
-        title: "Error",
-        description: "Failed to save your selection. Please try again.",
+        title: t('selectionModal.error'),
+        description: t('selectionModal.errorDescription'),
         variant: "destructive"
       });
     } finally {
@@ -148,7 +150,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       <DialogContent className="max-w-4xl h-[90vh] bg-slate-800 border-slate-600 text-white flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex justify-between items-center text-xl">
-            Review Your Selection ({selectedPhotos.length} photos)
+            {t('selectionModal.title', { count: selectedPhotos.length })}
             <Button
               size="sm"
               variant="outline"
@@ -163,7 +165,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         <div className="flex-1 overflow-y-auto space-y-6 pr-2">
           {/* Selected Photos Grid */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Selected Photos</h3>
+            <h3 className="text-lg font-semibold mb-3">{t('selectionModal.selectedPhotos')}</h3>
             <SelectedPhotosGrid
               photos={photos}
               selectedPhotos={selectedPhotos}
