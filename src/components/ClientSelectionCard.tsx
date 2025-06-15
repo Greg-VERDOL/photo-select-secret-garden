@@ -1,49 +1,19 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Download, CreditCard, User, Mail, Calendar, Eye, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { User, Calendar, Image as ImageIcon, Heart, Download } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import PhotoThumbnail from './PhotoThumbnail';
 import PaymentInfo from './PaymentInfo';
-
-interface PhotoSelection {
-  id: string;
-  selected_at: string;
-  client_email: string;
-  photo: {
-    id: string;
-    filename: string;
-    title: string;
-    storage_path: string;
-  };
-  gallery: {
-    id: string;
-    name: string;
-    client_name: string;
-  };
-}
-
-interface PaymentInfo {
-  extraPhotosCount: number;
-  amountPaid: number;
-  currency: string;
-}
-
-interface ClientSelections {
-  clientName: string;
-  clientEmail: string;
-  galleryName: string;
-  galleryId: string;
-  freePhotoLimit: number;
-  selections: PhotoSelection[];
-  paymentInfo?: PaymentInfo;
-}
+import { ClientSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
 
 interface ClientSelectionCardProps {
   clientGroup: ClientSelections;
   getPhotoUrl: (storagePath: string) => string;
   onPhotoClick: (selection: PhotoSelection) => void;
-  onDownloadAll: (clientSelections: ClientSelections) => void;
+  onDownloadAll: (clientGroup: ClientSelections, unwatermarked?: boolean) => void;
   downloadingClient: string | null;
 }
 
@@ -54,63 +24,88 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
   onDownloadAll,
   downloadingClient
 }) => {
-  const extraPhotosCount = Math.max(0, clientGroup.selections.length - clientGroup.freePhotoLimit);
-  
+  const isDownloading = downloadingClient === clientGroup.clientName;
+
   return (
-    <Card className="bg-white/3 border-white/10 backdrop-blur-xl rounded-2xl overflow-hidden">
-      {/* Client Header */}
-      <div className="p-8 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-medium text-white mb-1">{clientGroup.clientName}</h3>
-              <p className="text-slate-400 mb-2">{clientGroup.clientEmail}</p>
-              <div className="flex items-center space-x-4 text-sm text-slate-500 mb-2">
-                <span className="flex items-center space-x-1">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>{clientGroup.galleryName}</span>
-                </span>
-                <span className="flex items-center space-x-1">
-                  <Heart className="w-4 h-4" />
-                  <span>{clientGroup.selections.length} selected</span>
-                </span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full"
+    >
+      <Card className="bg-slate-800 border-slate-700 overflow-hidden">
+        <div className="p-6 space-y-6">
+          {/* Client Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-400" />
+                <h3 className="text-xl font-bold text-white">{clientGroup.clientName}</h3>
+                <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+                  {clientGroup.selections.length} photo{clientGroup.selections.length !== 1 ? 's' : ''}
+                </Badge>
               </div>
-              <PaymentInfo
-                extraPhotosCount={extraPhotosCount}
-                amountPaid={clientGroup.paymentInfo?.amountPaid}
-                currency={clientGroup.paymentInfo?.currency}
-              />
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-400">
+                <div className="flex items-center gap-1">
+                  <Mail className="w-4 h-4" />
+                  <span>{clientGroup.clientEmail}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                  <span>Gallery: {clientGroup.galleryName}</span>
+                </div>
+                {clientGroup.selections.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      Last selected: {new Date(clientGroup.selections[0].selected_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => onDownloadAll(clientGroup, false)}
+                disabled={isDownloading}
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Downloading...' : 'Download (Watermarked)'}
+              </Button>
+              
+              <Button
+                onClick={() => onDownloadAll(clientGroup, true)}
+                disabled={isDownloading}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <ShieldOff className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Downloading...' : 'Download Original'}
+              </Button>
             </div>
           </div>
-          
-          <Button
-            onClick={() => onDownloadAll(clientGroup)}
-            disabled={downloadingClient === clientGroup.clientName}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {downloadingClient === clientGroup.clientName ? 'Preparing...' : 'Download All'}
-          </Button>
-        </div>
-      </div>
 
-      {/* Photos Grid */}
-      <div className="p-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {clientGroup.selections.map((selection) => (
-            <PhotoThumbnail
-              key={selection.id}
-              selection={selection}
-              photoUrl={getPhotoUrl(selection.photo.storage_path)}
-              onClick={() => onPhotoClick(selection)}
-            />
-          ))}
+          {/* Payment Information */}
+          {clientGroup.paymentInfo && (
+            <PaymentInfo paymentInfo={clientGroup.paymentInfo} />
+          )}
+
+          {/* Photo Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {clientGroup.selections.map((selection) => (
+              <PhotoThumbnail
+                key={selection.id}
+                selection={selection}
+                getPhotoUrl={getPhotoUrl}
+                onPhotoClick={onPhotoClick}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
 

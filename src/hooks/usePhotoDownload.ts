@@ -15,7 +15,16 @@ export const usePhotoDownload = () => {
     return data.publicUrl;
   };
 
-  const downloadClientSelections = async (clientSelections: ClientSelections) => {
+  const getUnwatermarkedPhotoUrl = (storagePath: string) => {
+    // For unwatermarked photos, we'll use the original storage path
+    // This assumes the original photos are stored without watermarks
+    const { data } = supabase.storage
+      .from('gallery-photos')
+      .getPublicUrl(storagePath);
+    return data.publicUrl;
+  };
+
+  const downloadClientSelections = async (clientSelections: ClientSelections, unwatermarked: boolean = false) => {
     setDownloadingClient(clientSelections.clientName);
     
     try {
@@ -24,11 +33,15 @@ export const usePhotoDownload = () => {
       
       for (const selection of clientSelections.selections) {
         try {
-          const photoUrl = getPhotoUrl(selection.photo.storage_path);
+          const photoUrl = unwatermarked 
+            ? getUnwatermarkedPhotoUrl(selection.photo.storage_path)
+            : getPhotoUrl(selection.photo.storage_path);
+          
           const response = await fetch(photoUrl);
           const blob = await response.blob();
           const filename = selection.photo.title || selection.photo.filename;
-          zip.file(`${filename}.jpg`, blob);
+          const extension = filename.includes('.') ? '' : '.jpg';
+          zip.file(`${filename}${extension}`, blob);
         } catch (error) {
           console.error(`Failed to download ${selection.photo.filename}:`, error);
         }
@@ -38,7 +51,8 @@ export const usePhotoDownload = () => {
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${clientSelections.clientName}-selections.zip`;
+      const suffix = unwatermarked ? '-unwatermarked' : '';
+      a.download = `${clientSelections.clientName}-selections${suffix}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -46,7 +60,7 @@ export const usePhotoDownload = () => {
       
       toast({
         title: "Download Complete",
-        description: `Downloaded ${clientSelections.selections.length} photos for ${clientSelections.clientName}`,
+        description: `Downloaded ${clientSelections.selections.length} ${unwatermarked ? 'unwatermarked ' : ''}photos for ${clientSelections.clientName}`,
       });
     } catch (error) {
       toast({
@@ -62,6 +76,7 @@ export const usePhotoDownload = () => {
   return {
     downloadingClient,
     downloadClientSelections,
-    getPhotoUrl
+    getPhotoUrl,
+    getUnwatermarkedPhotoUrl
   };
 };

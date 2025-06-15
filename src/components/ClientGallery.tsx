@@ -11,14 +11,16 @@ import GalleryHeader from './GalleryHeader';
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoLightbox from './PhotoLightbox';
 import SelectionModal from './SelectionModal';
+import PhotoPreviewModal from './PhotoPreviewModal';
 
 const ClientGallery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showSelectionModal, setShowSelectionModal] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   
   const { gallery, photos, loading, getPhotoUrl } = useGalleryData();
-  const { selectedPhotos, clientInfo, togglePhotoSelection } = usePhotoSelections(gallery);
+  const { selectedPhotos, clientInfo, togglePhotoSelection, selectAllPhotos, deselectAllPhotos } = usePhotoSelections(gallery);
   const { lightboxPhoto, setLightboxPhoto, navigateLightbox, closeLightbox } = useLightbox(photos);
 
   const handleSendSelection = () => {
@@ -31,6 +33,10 @@ const ClientGallery = () => {
       return;
     }
     setShowSelectionModal(true);
+  };
+
+  const handlePhotoClick = (photo) => {
+    setPreviewPhoto(photo);
   };
 
   if (loading) {
@@ -69,8 +75,10 @@ const ClientGallery = () => {
         <PhotoGalleryGrid
           photos={photos}
           selectedPhotos={selectedPhotos}
-          onPhotoClick={setLightboxPhoto}
+          onPhotoClick={handlePhotoClick}
           onToggleSelection={togglePhotoSelection}
+          onSelectAll={selectAllPhotos}
+          onDeselectAll={deselectAllPhotos}
         />
       </div>
 
@@ -80,6 +88,22 @@ const ClientGallery = () => {
         onClose={closeLightbox}
         onNavigate={navigateLightbox}
         onToggleSelection={togglePhotoSelection}
+      />
+
+      <PhotoPreviewModal
+        photo={previewPhoto}
+        isOpen={!!previewPhoto}
+        onClose={() => setPreviewPhoto(null)}
+        getPhotoUrl={getPhotoUrl}
+        photos={photos}
+        onNavigate={(direction) => {
+          if (!previewPhoto) return;
+          const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
+          const newIndex = direction === 'prev' 
+            ? (currentIndex - 1 + photos.length) % photos.length
+            : (currentIndex + 1) % photos.length;
+          setPreviewPhoto(photos[newIndex]);
+        }}
       />
 
       <SelectionModal

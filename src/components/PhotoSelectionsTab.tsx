@@ -19,6 +19,10 @@ const PhotoSelectionsTab: React.FC = () => {
     setSelectedPhoto(selection);
   };
 
+  const handleDownloadAll = (clientSelections: any, unwatermarked: boolean = false) => {
+    downloadClientSelections(clientSelections, unwatermarked);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -55,7 +59,7 @@ const PhotoSelectionsTab: React.FC = () => {
               clientGroup={clientGroup}
               getPhotoUrl={getPhotoUrl}
               onPhotoClick={handlePhotoClick}
-              onDownloadAll={downloadClientSelections}
+              onDownloadAll={handleDownloadAll}
               downloadingClient={downloadingClient}
             />
           ))}

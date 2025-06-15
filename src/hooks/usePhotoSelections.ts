@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Gallery } from './useGalleryData';
+import { Gallery, Photo } from './useGalleryData';
 
 export const usePhotoSelections = (gallery: Gallery | null) => {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -73,6 +73,26 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
     });
   };
 
+  const selectAllPhotos = (photos: Photo[]) => {
+    const allPhotoIds = new Set(photos.map(photo => photo.id));
+    setSelectedPhotos(allPhotoIds);
+    
+    toast({
+      title: "All photos selected",
+      description: `Selected ${photos.length} photos`,
+      duration: 2000,
+    });
+  };
+
+  const deselectAllPhotos = () => {
+    setSelectedPhotos(new Set());
+    
+    toast({
+      title: "All photos deselected",
+      duration: 2000,
+    });
+  };
+
   // Pre-fill client info if available
   useEffect(() => {
     if (gallery && (gallery.client_name || gallery.client_email)) {
@@ -87,6 +107,8 @@ export const usePhotoSelections = (gallery: Gallery | null) => {
     selectedPhotos,
     clientInfo,
     togglePhotoSelection,
+    selectAllPhotos,
+    deselectAllPhotos,
     setClientInfo
   };
 };
