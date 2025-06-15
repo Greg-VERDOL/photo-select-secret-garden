@@ -2,14 +2,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { X, Send, Download, CreditCard } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import SelectedPhotosGrid from './SelectedPhotosGrid';
 import PricingInfo from './PricingInfo';
+import ClientInfoForm from './ClientInfoForm';
+import SelectionActions from './SelectionActions';
 
 interface Photo {
   id: string;
@@ -201,67 +200,23 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           />
 
           {/* Client Information Form */}
-          <div className="space-y-4 bg-slate-700/30 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold">Your Information</h3>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <Label htmlFor="email" className="text-slate-300">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  className="bg-slate-700 border-slate-600 text-white"
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="message" className="text-slate-300">Message (optional)</Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Any special requests or notes..."
-                  className="bg-slate-700 border-slate-600 text-white"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
+          <ClientInfoForm
+            email={email}
+            message={message}
+            onEmailChange={setEmail}
+            onMessageChange={setMessage}
+          />
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-600">
-            <Button
-              onClick={handleDownload}
-              disabled={isDownloading || selectedPhotos.length === 0}
-              variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? 'Downloading...' : 'Download Photos'}
-            </Button>
-            
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || selectedPhotos.length === 0}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              {extraPhotosCount > 0 ? (
-                <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  {isSubmitting ? 'Processing...' : `Pay €${totalCost} & Send Selection`}
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting ? 'Sending...' : 'Send Selection'}
-                </>
-              )}
-            </Button>
-          </div>
+          <SelectionActions
+            selectedPhotosCount={selectedPhotos.length}
+            extraPhotosCount={extraPhotosCount}
+            totalCost={totalCost}
+            isDownloading={isDownloading}
+            isSubmitting={isSubmitting}
+            onDownload={handleDownload}
+            onSubmit={handleSubmit}
+          />
         </div>
       </DialogContent>
     </Dialog>
