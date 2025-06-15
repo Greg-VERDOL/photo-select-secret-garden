@@ -69,8 +69,8 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
       <DialogContent className="max-w-7xl max-h-[95vh] bg-slate-800 border-slate-600 text-white overflow-hidden p-0">
         <DialogHeader className="p-4 md:p-6 pb-0">
           <DialogTitle className="flex justify-between items-center">
-            <span className="text-sm md:text-base">{photo.title || photo.filename}</span>
-            <div className="flex items-center gap-2">
+            <span className="sr-only">Photo Preview</span>
+            <div className="flex items-center gap-2 ml-auto">
               {onToggleSelection && (
                 <Button
                   size="sm"
@@ -163,10 +163,6 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
           )}
           
           <div className="text-slate-400 text-xs text-center px-4">
-            {photo.created_at && (
-              <p>Uploaded: {new Date(photo.created_at).toLocaleDateString()}</p>
-            )}
-            <p>Filename: {photo.filename}</p>
             {photos.length > 1 && (
               <p>Photo {currentIndex + 1} of {photos.length}</p>
             )}
