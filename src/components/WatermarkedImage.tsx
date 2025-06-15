@@ -7,15 +7,27 @@ interface WatermarkedImageProps {
   alt: string;
   className?: string;
   onClick?: () => void;
+  fitContainer?: boolean;
 }
 
-const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ src, alt, className, onClick }) => {
+const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ 
+  src, 
+  alt, 
+  className, 
+  onClick, 
+  fitContainer = false 
+}) => {
   return (
     <div className={cn("relative inline-block", className)} onClick={onClick}>
       <img 
         src={src} 
         alt={alt} 
-        className="block max-w-[90vw] max-h-[80vh]"
+        className={cn(
+          "block",
+          fitContainer 
+            ? "w-full h-full object-cover" 
+            : "max-w-[90vw] max-h-[80vh]"
+        )}
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
         style={{ userSelect: 'none' }}

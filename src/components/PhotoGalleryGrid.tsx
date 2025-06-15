@@ -75,7 +75,8 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
                 <WatermarkedImage
                   src={(photo as any).thumbnail}
                   alt={photo.title || photo.filename}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full transition-transform duration-300 group-hover:scale-105"
+                  fitContainer={true}
                 />
                 
                 {/* Selection overlay - Always visible on mobile, hover on desktop */}
