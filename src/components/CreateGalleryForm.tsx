@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -101,7 +100,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             value={newGalleryData.name}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, name: e.target.value })}
             placeholder="Wedding - Johnson Family"
-            className="w-full"
+            className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
         
@@ -113,7 +112,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             value={newGalleryData.clientName}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, clientName: e.target.value })}
             placeholder="John & Jane Johnson"
-            className="w-full"
+            className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
         
@@ -126,7 +125,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             value={newGalleryData.clientEmail}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, clientEmail: e.target.value })}
             placeholder="client@example.com"
-            className="w-full"
+            className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
 
@@ -140,7 +139,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             value={newGalleryData.freePhotoLimit}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, freePhotoLimit: parseInt(e.target.value) || 0 })}
             placeholder="5"
-            className="w-full"
+            className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
           <p className="text-xs text-gray-500 mt-1">
             Number of photos the client can select for free. They'll pay for additional selections.
@@ -153,7 +152,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
           <Button
             variant="outline"
             onClick={onCancel}
-            className="flex-1"
+            className="flex-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
             disabled={isLoading}
           >
             Cancel
