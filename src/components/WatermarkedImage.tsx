@@ -9,8 +9,15 @@ interface WatermarkedImageProps {
 }
 
 const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ src, alt, className, onClick }) => {
+  const handleClick = () => {
+    console.log('WatermarkedImage handleClick called');
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <div className="relative inline-block" onClick={onClick}>
+    <div className="relative inline-block w-full h-full" onClick={handleClick}>
       <img 
         src={src} 
         alt={alt} 
