@@ -2,7 +2,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import WatermarkedImage from './WatermarkedImage';
 
 interface Photo {
@@ -76,17 +76,6 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            {allowDownload && onDownload && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onDownload(photo)}
-                className="border-white/30 text-white hover:bg-white/10"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-            )}
             <Button
               size="sm"
               variant="outline"
