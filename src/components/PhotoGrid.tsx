@@ -54,6 +54,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                 src={getPhotoUrl(photo.storage_path)}
                 alt={photo.title || photo.filename}
                 className="w-full aspect-square object-cover hover:opacity-80 transition-opacity"
+                showWatermark={false}
               />
               <div className="p-2">
                 <p className="text-xs text-slate-300 truncate">{photo.title || photo.filename}</p>
