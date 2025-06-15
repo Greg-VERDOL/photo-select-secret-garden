@@ -22,6 +22,7 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
 }) => {
   const [watermarkText, setWatermarkText] = useState('© PHOTO STUDIO');
   const [watermarkStyle, setWatermarkStyle] = useState('corners');
+  const [centerWatermarkText, setCenterWatermarkText] = useState('PROOF');
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
       const { data, error } = await supabase
         .from('app_settings')
         .select('key, value')
-        .in('key', ['watermark_text', 'watermark_style']);
+        .in('key', ['watermark_text', 'watermark_style', 'center_watermark_text']);
 
       if (error) {
         console.warn('Could not fetch watermark settings, using defaults:', error);
@@ -51,6 +52,8 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
             setWatermarkText(setting.value || '© PHOTO STUDIO');
           } else if (setting.key === 'watermark_style') {
             setWatermarkStyle(setting.value || 'corners');
+          } else if (setting.key === 'center_watermark_text') {
+            setCenterWatermarkText(setting.value || 'PROOF');
           }
         });
       }
@@ -99,7 +102,7 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
           {/* Center watermark */}
           {showCenter && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl font-bold backdrop-blur-sm bg-black/10 px-4 py-2 rounded rotate-12">
-              PROOF
+              {centerWatermarkText}
             </div>
           )}
           

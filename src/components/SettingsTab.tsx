@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ const SettingsTab: React.FC = () => {
   const [isStripeConnected, setIsStripeConnected] = useState(false);
   const [watermarkText, setWatermarkText] = useState<string>('© PHOTO STUDIO');
   const [watermarkStyle, setWatermarkStyle] = useState<string>('corners');
+  const [centerWatermarkText, setCenterWatermarkText] = useState<string>('PROOF');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
@@ -26,7 +28,7 @@ const SettingsTab: React.FC = () => {
       const { data, error } = await supabase
         .from('app_settings')
         .select('key, value')
-        .in('key', ['price_per_extra_photo_cents', 'stripe_connected', 'watermark_text', 'watermark_style']);
+        .in('key', ['price_per_extra_photo_cents', 'stripe_connected', 'watermark_text', 'watermark_style', 'center_watermark_text']);
 
       if (error) throw error;
 
@@ -39,6 +41,8 @@ const SettingsTab: React.FC = () => {
           setWatermarkText(setting.value);
         } else if (setting.key === 'watermark_style') {
           setWatermarkStyle(setting.value);
+        } else if (setting.key === 'center_watermark_text') {
+          setCenterWatermarkText(setting.value);
         }
       });
     } catch (error) {
@@ -60,7 +64,8 @@ const SettingsTab: React.FC = () => {
       const settingsToUpdate = [
         { key: 'price_per_extra_photo_cents', value: priceInCents.toString() },
         { key: 'watermark_text', value: watermarkText },
-        { key: 'watermark_style', value: watermarkStyle }
+        { key: 'watermark_style', value: watermarkStyle },
+        { key: 'center_watermark_text', value: centerWatermarkText }
       ];
 
       for (const setting of settingsToUpdate) {
@@ -169,7 +174,7 @@ const SettingsTab: React.FC = () => {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Watermark Text
+              Corner Watermark Text
             </label>
             <Input
               type="text"
@@ -179,7 +184,23 @@ const SettingsTab: React.FC = () => {
               placeholder="© PHOTO STUDIO"
             />
             <p className="text-sm text-slate-400 mt-2">
-              This text will appear as a watermark on all gallery images
+              This text will appear in the corners of gallery images
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Center Watermark Text
+            </label>
+            <Input
+              type="text"
+              value={centerWatermarkText}
+              onChange={(e) => setCenterWatermarkText(e.target.value)}
+              className="bg-slate-700 border-slate-600 text-white"
+              placeholder="PROOF"
+            />
+            <p className="text-sm text-slate-400 mt-2">
+              This text will appear in the center of gallery images when center watermark is enabled
             </p>
           </div>
 
