@@ -18,14 +18,12 @@ export const addWatermarks = (
   ctx.save();
 
   if (showCorners) {
-    // Corner watermarks with client email and timestamp
-    const timestamp = new Date().toLocaleString();
+    // Corner watermarks with client email
     
     const infoParts = [watermarkText];
     if (clientEmail) {
       infoParts.push(clientEmail);
     }
-    infoParts.push(timestamp);
     const watermarkWithInfo = infoParts.join(' - ');
     
     ctx.font = `${Math.max(12, width * 0.015)}px Arial`;
