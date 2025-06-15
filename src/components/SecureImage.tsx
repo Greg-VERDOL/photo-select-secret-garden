@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useSecureViewing } from '@/hooks/useSecureViewing';
@@ -69,7 +68,8 @@ const SecureImage: React.FC<SecureImageProps> = ({
     if (window.outerHeight - window.innerHeight > threshold || 
         window.outerWidth - window.innerWidth > threshold) {
       logDownloadAttempt(photoId, 'dev_tools_detected');
-      setIsBlurred(true);
+      // Keep detection but don't show blur overlay
+      // setIsBlurred(true); // Commented out to disable visual feedback
     }
   }, [photoId, logDownloadAttempt]);
 
@@ -249,12 +249,6 @@ const SecureImage: React.FC<SecureImageProps> = ({
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-800/50 rounded-lg">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {isBlurred && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 rounded-lg">
-          <p className="text-white text-sm font-bold">Suspicious activity detected</p>
         </div>
       )}
 
