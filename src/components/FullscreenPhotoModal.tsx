@@ -121,14 +121,12 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
         )}
 
         {/* Image container that fits within viewport */}
-        <div className="w-full h-full pt-16 pb-4 px-4">
-          <div className="w-full h-full flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center p-8 pt-20 md:p-16">
             <WatermarkedImage
               src={getPhotoUrl(photo.storage_path)}
               alt={photo.title || photo.filename}
               className="max-w-full max-h-full"
             />
-          </div>
         </div>
       </DialogContent>
     </Dialog>
