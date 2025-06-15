@@ -71,39 +71,41 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
             />
           </div>
           
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="opacity-90"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-slate-800 border-slate-600">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-white">Delete Photo</AlertDialogTitle>
-                  <AlertDialogDescription className="text-slate-300">
-                    Are you sure you want to delete "{photo.title || photo.filename}"? 
-                    This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDeletePhoto(photo.id, photo.storage_path)}
-                    className="bg-red-600 hover:bg-red-700"
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="opacity-90"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-slate-800 border-slate-600">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">Delete Photo</AlertDialogTitle>
+                    <AlertDialogDescription className="text-slate-300">
+                      Are you sure you want to delete "{photo.title || photo.filename}"? 
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onDeletePhoto(photo.id, photo.storage_path)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
           
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
@@ -121,3 +123,4 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
 };
 
 export default PhotoGrid;
+
