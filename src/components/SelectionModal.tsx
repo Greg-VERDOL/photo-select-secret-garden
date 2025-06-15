@@ -113,10 +113,13 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         galleryId,
         clientEmail: paymentEmail.trim(),
         selectedPhotos: selectedPhotos,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        needsPayment: true,
+        extraPhotosCount,
+        totalCost
       };
       
-      console.log('Storing pending selections:', pendingSelections);
+      console.log('Storing pending selections for payment:', pendingSelections);
       localStorage.setItem('pendingSelections', JSON.stringify(pendingSelections));
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
@@ -163,16 +166,21 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     }
 
     try {
-      console.log('Saving selections:', { galleryId, finalEmail, selectedPhotos });
+      console.log('Saving free selections:', { galleryId, finalEmail, selectedPhotos });
       
-      // Delete existing selections for this client and gallery
-      await supabase
+      // First, delete existing selections for this client and gallery to avoid duplicates
+      const { error: deleteError } = await supabase
         .from('photo_selections')
         .delete()
         .eq('gallery_id', galleryId)
         .eq('client_email', finalEmail.trim());
 
-      // Insert new selections
+      if (deleteError) {
+        console.error('Error deleting existing selections:', deleteError);
+        // Continue anyway, as this might just mean no existing selections
+      }
+
+      // Insert new selections only if there are photos selected
       if (selectedPhotos.length > 0) {
         const selections = selectedPhotos.map(photoId => ({
           gallery_id: galleryId,
@@ -180,13 +188,30 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           client_email: finalEmail.trim(),
         }));
 
-        console.log('Inserting selections:', selections);
-        const { error } = await supabase
+        console.log('Inserting new selections:', selections);
+        const { error: insertError } = await supabase
           .from('photo_selections')
           .insert(selections);
 
-        if (error) throw error;
+        if (insertError) {
+          console.error('Error inserting selections:', insertError);
+          throw insertError;
+        }
+
+        console.log('Successfully saved selections:', selections.length);
       }
+
+      // Store successful completion data for potential future reference
+      const completedSelections = {
+        galleryId,
+        clientEmail: finalEmail.trim(),
+        selectedPhotos: selectedPhotos,
+        timestamp: Date.now(),
+        needsPayment: false,
+        completed: true
+      };
+      
+      localStorage.setItem('completedSelections', JSON.stringify(completedSelections));
 
       toast({
         title: "Selections saved!",
@@ -198,7 +223,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       console.error('Error saving selections:', error);
       toast({
         title: "Error saving selections",
-        description: "Failed to save your photo selections.",
+        description: "Failed to save your photo selections. Please try again.",
         variant: "destructive"
       });
     }
