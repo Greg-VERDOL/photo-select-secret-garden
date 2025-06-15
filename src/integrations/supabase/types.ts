@@ -104,6 +104,57 @@ export type Database = {
         }
         Relationships: []
       }
+      download_attempts: {
+        Row: {
+          attempt_type: string
+          attempted_at: string | null
+          blocked: boolean | null
+          client_email: string
+          gallery_id: string | null
+          id: string
+          ip_address: string | null
+          photo_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_type: string
+          attempted_at?: string | null
+          blocked?: boolean | null
+          client_email: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          photo_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          attempted_at?: string | null
+          blocked?: boolean | null
+          client_email?: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          photo_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "download_attempts_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "download_attempts_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       galleries: {
         Row: {
           access_code: string
@@ -144,6 +195,60 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_access_logs: {
+        Row: {
+          access_token: string
+          accessed_at: string | null
+          client_email: string
+          expires_at: string
+          gallery_id: string | null
+          id: string
+          ip_address: string | null
+          is_suspicious: boolean | null
+          photo_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          access_token: string
+          accessed_at?: string | null
+          client_email: string
+          expires_at: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          is_suspicious?: boolean | null
+          photo_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          access_token?: string
+          accessed_at?: string | null
+          client_email?: string
+          expires_at?: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          is_suspicious?: boolean | null
+          photo_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_access_logs_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_access_logs_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
             referencedColumns: ["id"]
           },
         ]
@@ -268,6 +373,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "photos_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      viewing_sessions: {
+        Row: {
+          client_email: string
+          created_at: string | null
+          current_views: number | null
+          expires_at: string
+          gallery_id: string | null
+          id: string
+          ip_address: string | null
+          max_views: number | null
+          session_token: string
+          user_agent: string | null
+        }
+        Insert: {
+          client_email: string
+          created_at?: string | null
+          current_views?: number | null
+          expires_at: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          max_views?: number | null
+          session_token: string
+          user_agent?: string | null
+        }
+        Update: {
+          client_email?: string
+          created_at?: string | null
+          current_views?: number | null
+          expires_at?: string
+          gallery_id?: string | null
+          id?: string
+          ip_address?: string | null
+          max_views?: number | null
+          session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viewing_sessions_gallery_id_fkey"
             columns: ["gallery_id"]
             isOneToOne: false
             referencedRelation: "galleries"

@@ -8,7 +8,7 @@ import { useGalleryData } from '@/hooks/useGalleryData';
 import { usePhotoSelections } from '@/hooks/usePhotoSelections';
 import { useLightbox } from '@/hooks/useLightbox';
 import GalleryHeader from './GalleryHeader';
-import PhotoGalleryGrid from './PhotoGalleryGrid';
+import SecurePhotoGrid from './SecurePhotoGrid';
 import PhotoLightbox from './PhotoLightbox';
 import PhotoPreviewModal from './PhotoPreviewModal';
 import SelectionModal from './SelectionModal';
@@ -114,9 +114,11 @@ const ClientGallery = () => {
       />
 
       <div className="max-w-7xl mx-auto p-3 md:p-6">
-        <PhotoGalleryGrid
+        <SecurePhotoGrid
           photos={photosForGrid}
           selectedPhotos={selectedPhotos}
+          galleryId={gallery.id}
+          clientEmail={clientInfo.email || gallery.client_email || ''}
           onPhotoClick={handlePhotoClick}
           onToggleSelection={togglePhotoSelection}
           onSelectAll={handleSelectAll}

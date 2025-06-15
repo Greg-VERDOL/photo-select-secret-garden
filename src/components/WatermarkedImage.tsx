@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,8 @@ interface WatermarkedImageProps {
   className?: string;
   onClick?: () => void;
   fitContainer?: boolean;
-  showWatermark?: boolean; // New prop to control watermark display
+  showWatermark?: boolean;
+  isAdminView?: boolean;
 }
 
 const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ 
@@ -18,7 +18,8 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
   className, 
   onClick, 
   fitContainer = false,
-  showWatermark = true // Default to true to maintain existing behavior
+  showWatermark = true,
+  isAdminView = false
 }) => {
   const [watermarkText, setWatermarkText] = useState('© PHOTO STUDIO');
   const [watermarkStyle, setWatermarkStyle] = useState('corners');
@@ -26,12 +27,12 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
-    if (showWatermark) {
+    if (showWatermark && !isAdminView) {
       fetchWatermarkSettings();
     } else {
       setSettingsLoaded(true);
     }
-  }, [showWatermark]);
+  }, [showWatermark, isAdminView]);
 
   const fetchWatermarkSettings = async () => {
     try {
@@ -64,8 +65,10 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
     }
   };
 
-  const showCorners = showWatermark && (watermarkStyle === 'corners' || watermarkStyle === 'full');
-  const showCenter = showWatermark && (watermarkStyle === 'center' || watermarkStyle === 'full');
+  // For admin view, don't show watermarks
+  const shouldShowWatermark = showWatermark && !isAdminView;
+  const showCorners = shouldShowWatermark && (watermarkStyle === 'corners' || watermarkStyle === 'full');
+  const showCenter = shouldShowWatermark && (watermarkStyle === 'center' || watermarkStyle === 'full');
 
   return (
     <div className={cn("relative inline-block", className)} onClick={onClick}>
@@ -83,8 +86,8 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
         style={{ userSelect: 'none' }}
       />
       
-      {/* Watermark overlay - only show if watermark is enabled and settings are loaded */}
-      {showWatermark && settingsLoaded && (
+      {/* Watermark overlay - only show if watermark is enabled, settings are loaded, and not admin view */}
+      {shouldShowWatermark && settingsLoaded && (
         <div className="absolute inset-0 pointer-events-none">
           {/* Corner watermarks */}
           {showCorners && (
