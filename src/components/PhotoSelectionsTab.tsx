@@ -6,13 +6,13 @@ import PhotoSelectionsHeader from './PhotoSelectionsHeader';
 import EmptySelectionsState from './EmptySelectionsState';
 import ClientSelectionCard from './ClientSelectionCard';
 import PhotoSelectionModal from './PhotoSelectionModal';
-import { usePhotoSelections, PhotoSelection } from '@/hooks/usePhotoSelections';
+import { useAdminPhotoSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
 import { usePhotoDownload } from '@/hooks/usePhotoDownload';
 
 const PhotoSelectionsTab: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoSelection | null>(null);
   
-  const { groupedSelections, loading, refreshing, handleManualRefresh } = usePhotoSelections();
+  const { groupedSelections, loading, refreshing, handleManualRefresh } = useAdminPhotoSelections();
   const { downloadingClient, downloadClientSelections, getPhotoUrl } = usePhotoDownload();
 
   const handlePhotoClick = (selection: PhotoSelection) => {

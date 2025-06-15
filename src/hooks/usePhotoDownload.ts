@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientSelections } from './usePhotoSelections';
+import { ClientSelections } from './useAdminPhotoSelections';
 
 export const usePhotoDownload = () => {
   const [downloadingClient, setDownloadingClient] = useState<string | null>(null);
