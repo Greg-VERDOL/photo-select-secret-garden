@@ -2,7 +2,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import WatermarkedImage from './WatermarkedImage';
 
 interface Photo {
@@ -21,6 +21,8 @@ interface PhotoPreviewModalProps {
   getPhotoUrl: (storagePath: string) => string;
   photos?: Photo[];
   onNavigate?: (direction: 'prev' | 'next') => void;
+  selectedPhotos?: Set<string>;
+  onToggleSelection?: (photoId: string) => void;
 }
 
 const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
@@ -29,7 +31,9 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
   onClose,
   getPhotoUrl,
   photos = [],
-  onNavigate
+  onNavigate,
+  selectedPhotos = new Set(),
+  onToggleSelection
 }) => {
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!isOpen || !onNavigate) return;
@@ -58,6 +62,7 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
   const currentIndex = photos.findIndex(p => p.id === photo.id);
   const canNavigatePrev = currentIndex > 0;
   const canNavigateNext = currentIndex < photos.length - 1;
+  const isSelected = selectedPhotos.has(photo.id);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -65,14 +70,31 @@ const PhotoPreviewModal: React.FC<PhotoPreviewModalProps> = ({
         <DialogHeader className="p-4 md:p-6 pb-0">
           <DialogTitle className="flex justify-between items-center">
             <span className="text-sm md:text-base">{photo.title || photo.filename}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onClose}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {onToggleSelection && (
+                <Button
+                  size="sm"
+                  variant={isSelected ? "default" : "outline"}
+                  onClick={() => onToggleSelection(photo.id)}
+                  className={`${
+                    isSelected 
+                      ? "bg-red-500 hover:bg-red-600 text-white" 
+                      : "border-slate-600 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 mr-1 ${isSelected ? 'fill-current' : ''}`} />
+                  {isSelected ? 'Selected' : 'Select'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onClose}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
         

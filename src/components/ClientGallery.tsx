@@ -10,6 +10,7 @@ import { useLightbox } from '@/hooks/useLightbox';
 import GalleryHeader from './GalleryHeader';
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoLightbox from './PhotoLightbox';
+import PhotoPreviewModal from './PhotoPreviewModal';
 import SelectionModal from './SelectionModal';
 import FullscreenPhotoModal from './FullscreenPhotoModal';
 
@@ -18,6 +19,7 @@ const ClientGallery = () => {
   const { toast } = useToast();
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   
   const { gallery, photos, loading, getPhotoUrl } = useGalleryData();
   const { selectedPhotos, clientInfo, togglePhotoSelection, selectAllPhotos, deselectAllPhotos } = usePhotoSelections(gallery);
@@ -56,6 +58,21 @@ const ClientGallery = () => {
     }
     
     setFullscreenPhoto(photos[newIndex]);
+  };
+
+  const navigatePreview = (direction: 'prev' | 'next') => {
+    if (!previewPhoto) return;
+    
+    const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
+    let newIndex;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
+    } else {
+      newIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setPreviewPhoto(photos[newIndex]);
   };
 
   if (loading) {
@@ -106,6 +123,17 @@ const ClientGallery = () => {
         selectedPhotos={selectedPhotos}
         onClose={closeLightbox}
         onNavigate={navigateLightbox}
+        onToggleSelection={togglePhotoSelection}
+      />
+
+      <PhotoPreviewModal
+        photo={previewPhoto}
+        isOpen={!!previewPhoto}
+        onClose={() => setPreviewPhoto(null)}
+        getPhotoUrl={getPhotoUrl}
+        photos={photos}
+        onNavigate={navigatePreview}
+        selectedPhotos={selectedPhotos}
         onToggleSelection={togglePhotoSelection}
       />
 
