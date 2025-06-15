@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          admin_email: string
+          client_email: string
+          error_message: string | null
+          gallery_id: string
+          id: string
+          notification_data: Json | null
+          sent_at: string
+          status: string
+          type: string
+        }
+        Insert: {
+          admin_email: string
+          client_email: string
+          error_message?: string | null
+          gallery_id: string
+          id?: string
+          notification_data?: Json | null
+          sent_at?: string
+          status?: string
+          type?: string
+        }
+        Update: {
+          admin_email?: string
+          client_email?: string
+          error_message?: string | null
+          gallery_id?: string
+          id?: string
+          notification_data?: Json | null
+          sent_at?: string
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           created_at: string

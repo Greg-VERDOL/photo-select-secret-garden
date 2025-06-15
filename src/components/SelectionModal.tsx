@@ -45,6 +45,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
+  const [galleryInfo, setGalleryInfo] = useState<any>(null);
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -52,29 +53,67 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
   const totalCost = extraPhotosCount * pricePerPhoto;
 
-  // Fetch pricing from settings
+  // Fetch pricing and gallery info
   useEffect(() => {
-    const fetchPricing = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch pricing
+        const { data: pricingData, error: pricingError } = await supabase
           .from('app_settings')
           .select('value')
           .eq('key', 'price_per_extra_photo_cents')
           .single();
 
-        if (!error && data) {
-          const priceInEuros = parseInt(data.value) / 100;
+        if (!pricingError && pricingData) {
+          const priceInEuros = parseInt(pricingData.value) / 100;
           setPricePerPhoto(priceInEuros);
         }
+
+        // Fetch gallery info for notifications
+        const { data: gallery, error: galleryError } = await supabase
+          .from('galleries')
+          .select('name, access_code, client_name')
+          .eq('id', galleryId)
+          .single();
+
+        if (!galleryError && gallery) {
+          setGalleryInfo(gallery);
+        }
       } catch (error) {
-        console.warn('Failed to fetch pricing, using default:', error);
+        console.warn('Failed to fetch data:', error);
       }
     };
 
     if (isOpen) {
-      fetchPricing();
+      fetchData();
     }
-  }, [isOpen]);
+  }, [isOpen, galleryId]);
+
+  const sendAdminNotification = async () => {
+    try {
+      await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          galleryId,
+          clientEmail: email.trim(),
+          clientName: galleryInfo?.client_name,
+          selectedPhotosCount: selectedPhotos.length,
+          extraPhotosCount,
+          totalCost,
+          galleryName: galleryInfo?.name || 'Unknown Gallery',
+          accessCode: galleryInfo?.access_code || '',
+          selectedPhotos: selectedPhotoObjects.map(photo => ({
+            id: photo.id,
+            filename: photo.filename,
+            title: photo.title
+          }))
+        }
+      });
+      console.log('Admin notification sent successfully');
+    } catch (error) {
+      console.error('Failed to send admin notification:', error);
+      // Don't block the main flow if notification fails
+    }
+  };
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -104,6 +143,9 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         });
 
       if (selectionsError) throw selectionsError;
+
+      // Send admin notification (don't await to avoid blocking)
+      sendAdminNotification();
 
       // Handle payment if needed
       if (extraPhotosCount > 0) {

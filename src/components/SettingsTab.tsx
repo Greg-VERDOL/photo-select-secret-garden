@@ -7,6 +7,7 @@ import { Settings } from 'lucide-react';
 import WatermarkSettings from './settings/WatermarkSettings';
 import PricingSettings from './settings/PricingSettings';
 import StripeSettings from './settings/StripeSettings';
+import NotificationSettings from './settings/NotificationSettings';
 
 const SettingsTab: React.FC = () => {
   const [pricePerPhoto, setPricePerPhoto] = useState<string>('5.00');
@@ -14,6 +15,8 @@ const SettingsTab: React.FC = () => {
   const [watermarkText, setWatermarkText] = useState<string>('© PHOTO STUDIO');
   const [watermarkStyle, setWatermarkStyle] = useState<string>('corners');
   const [centerWatermarkText, setCenterWatermarkText] = useState<string>('PROOF');
+  const [adminEmail, setAdminEmail] = useState<string>('admin@example.com');
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
@@ -28,7 +31,15 @@ const SettingsTab: React.FC = () => {
       const { data, error } = await supabase
         .from('app_settings')
         .select('key, value')
-        .in('key', ['price_per_extra_photo_cents', 'stripe_connected', 'watermark_text', 'watermark_style', 'center_watermark_text']);
+        .in('key', [
+          'price_per_extra_photo_cents', 
+          'stripe_connected', 
+          'watermark_text', 
+          'watermark_style', 
+          'center_watermark_text',
+          'admin_notification_email',
+          'notifications_enabled'
+        ]);
 
       if (error) throw error;
 
@@ -43,6 +54,10 @@ const SettingsTab: React.FC = () => {
           setWatermarkStyle(setting.value);
         } else if (setting.key === 'center_watermark_text') {
           setCenterWatermarkText(setting.value);
+        } else if (setting.key === 'admin_notification_email') {
+          setAdminEmail(setting.value);
+        } else if (setting.key === 'notifications_enabled') {
+          setNotificationsEnabled(setting.value === 'true');
         }
       });
     } catch (error) {
@@ -65,7 +80,9 @@ const SettingsTab: React.FC = () => {
         { key: 'price_per_extra_photo_cents', value: priceInCents.toString() },
         { key: 'watermark_text', value: watermarkText },
         { key: 'watermark_style', value: watermarkStyle },
-        { key: 'center_watermark_text', value: centerWatermarkText }
+        { key: 'center_watermark_text', value: centerWatermarkText },
+        { key: 'admin_notification_email', value: adminEmail },
+        { key: 'notifications_enabled', value: notificationsEnabled.toString() }
       ];
 
       for (const setting of settingsToUpdate) {
@@ -160,9 +177,17 @@ const SettingsTab: React.FC = () => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-white">Settings</h1>
-          <p className="text-slate-300">Configure your photo gallery pricing and integrations</p>
+          <p className="text-slate-300">Configure your photo gallery pricing, integrations, and notifications</p>
         </div>
       </div>
+
+      {/* Notification Settings */}
+      <NotificationSettings
+        adminEmail={adminEmail}
+        setAdminEmail={setAdminEmail}
+        notificationsEnabled={notificationsEnabled}
+        setNotificationsEnabled={setNotificationsEnabled}
+      />
 
       {/* Watermark Settings */}
       <WatermarkSettings
