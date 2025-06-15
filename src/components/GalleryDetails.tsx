@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import FullscreenPhotoModal from './FullscreenPhotoModal';
 
 interface Gallery {
   id: string;
@@ -58,7 +58,6 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
 }) => {
   const { toast } = useToast();
   const [isDeletingGallery, setIsDeletingGallery] = useState(false);
-  const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -181,113 +180,82 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
     }
   };
 
-  const handlePreviewPhoto = (photo: Photo) => {
-    setPreviewPhoto(photo);
-  };
-
-  const handleClosePreview = () => {
-    setPreviewPhoto(null);
-  };
-
-  const handleNavigate = (direction: 'prev' | 'next') => {
-    if (!previewPhoto || photos.length < 2) return;
-    const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
-    const nextIndex = direction === 'next'
-      ? (currentIndex + 1) % photos.length
-      : (currentIndex - 1 + photos.length) % photos.length;
-    setPreviewPhoto(photos[nextIndex]);
-  };
-
   return (
-    <>
-      <Card className="p-6 bg-transparent border-none">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">{gallery.name}</h2>
-            <div className="space-y-1">
-              <p className="text-slate-300">{photos.length} photos</p>
-              {gallery.client_name && (
-                <p className="text-slate-300">Client: {gallery.client_name}</p>
-              )}
-              {gallery.client_email && (
-                <p className="text-slate-300">Email: {gallery.client_email}</p>
-              )}
-              <p className="text-sm text-blue-300">Access Code: {gallery.access_code}</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <input
-              type="file"
-              id="photo-upload"
-              multiple
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button
-              asChild
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              <label htmlFor="photo-upload" className="cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Photos
-              </label>
-            </Button>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="default">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Gallery
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-slate-800 border-slate-600 text-white">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-white">Delete Gallery</AlertDialogTitle>
-                  <AlertDialogDescription className="text-slate-300">
-                    Are you sure you want to delete the gallery "{gallery.name}" and all its photos? 
-                    This action cannot be undone and will permanently delete:
-                    <br />• {photos.length} photos
-                    <br />• All photo selections
-                    <br />• All payment records
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={deleteGallery}
-                    disabled={isDeletingGallery}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    {isDeletingGallery ? "Deleting..." : "Delete Gallery"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+    <Card className="p-6 bg-transparent border-none">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-white mb-2">{gallery.name}</h2>
+          <div className="space-y-1">
+            <p className="text-slate-300">{photos.length} photos</p>
+            {gallery.client_name && (
+              <p className="text-slate-300">Client: {gallery.client_name}</p>
+            )}
+            {gallery.client_email && (
+              <p className="text-slate-300">Email: {gallery.client_email}</p>
+            )}
+            <p className="text-sm text-blue-300">Access Code: {gallery.access_code}</p>
           </div>
         </div>
+        
+        <div className="flex gap-3">
+          <input
+            type="file"
+            id="photo-upload"
+            multiple
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button
+            asChild
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+          >
+            <label htmlFor="photo-upload" className="cursor-pointer">
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Photos
+            </label>
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="default">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Gallery
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-slate-800 border-slate-600 text-white">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-white">Delete Gallery</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-300">
+                  Are you sure you want to delete the gallery "{gallery.name}" and all its photos? 
+                  This action cannot be undone and will permanently delete:
+                  <br />• {photos.length} photos
+                  <br />• All photo selections
+                  <br />• All payment records
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={deleteGallery}
+                  disabled={isDeletingGallery}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isDeletingGallery ? "Deleting..." : "Delete Gallery"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
 
-        <PhotoGrid
-          photos={photos}
-          getPhotoUrl={getPhotoUrl}
-          onPhotoClick={handlePreviewPhoto}
-          onDeletePhoto={deletePhoto}
-        />
-      </Card>
-      
-      {previewPhoto && (
-        <FullscreenPhotoModal
-          isOpen={!!previewPhoto}
-          onClose={handleClosePreview}
-          photo={previewPhoto}
-          photos={photos}
-          getPhotoUrl={getPhotoUrl}
-          onNavigate={handleNavigate}
-          isAdminView={true}
-        />
-      )}
-    </>
+      <PhotoGrid
+        photos={photos}
+        getPhotoUrl={getPhotoUrl}
+        onPhotoClick={onPhotoClick}
+        onDeletePhoto={deletePhoto}
+      />
+    </Card>
   );
 };
 
