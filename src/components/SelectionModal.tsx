@@ -192,8 +192,9 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
           {/* Pricing Information */}
           <PricingInfo
-            selectedCount={selectedPhotos.length}
             freePhotoLimit={freePhotoLimit}
+            pricePerPhoto={3}
+            selectedPhotosCount={selectedPhotos.length}
             extraPhotosCount={extraPhotosCount}
             totalCost={totalCost}
           />
