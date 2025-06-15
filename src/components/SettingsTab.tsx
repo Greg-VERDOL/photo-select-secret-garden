@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -196,6 +195,7 @@ const SettingsTab: React.FC = () => {
               <option value="corners">Corners Only</option>
               <option value="center">Center Only</option>
               <option value="full">Full (Corners + Center)</option>
+              <option value="none">No Watermark</option>
             </select>
             <p className="text-sm text-slate-400 mt-2">
               Choose how the watermark appears on images

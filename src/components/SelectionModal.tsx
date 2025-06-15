@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
@@ -44,56 +43,36 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [pricePerPhoto, setPricePerPhoto] = useState(5.00); // Default fallback
   const { toast } = useToast();
 
   const selectedPhotoObjects = photos.filter(photo => selectedPhotos.includes(photo.id));
   const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
-  const totalCost = extraPhotosCount * 3; // €3 per extra photo
+  const totalCost = extraPhotosCount * pricePerPhoto;
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    
-    try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      
-      for (const photo of selectedPhotoObjects) {
-        try {
-          const photoUrl = getPhotoUrl(photo.storage_path);
-          const response = await fetch(photoUrl);
-          const blob = await response.blob();
-          const filename = photo.title || photo.filename;
-          const extension = filename.includes('.') ? '' : '.jpg';
-          zip.file(`${filename}${extension}`, blob);
-        } catch (error) {
-          console.error(`Failed to download ${photo.filename}:`, error);
+  // Fetch pricing from settings
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'price_per_extra_photo_cents')
+          .single();
+
+        if (!error && data) {
+          const priceInEuros = parseInt(data.value) / 100;
+          setPricePerPhoto(priceInEuros);
         }
+      } catch (error) {
+        console.warn('Failed to fetch pricing, using default:', error);
       }
-      
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `selected-photos.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Download Complete",
-        description: `Downloaded ${selectedPhotos.length} photos`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download Failed",
-        description: "Failed to download selected photos",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDownloading(false);
+    };
+
+    if (isOpen) {
+      fetchPricing();
     }
-  };
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -164,6 +143,51 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     }
   };
 
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      for (const photo of selectedPhotoObjects) {
+        try {
+          const photoUrl = getPhotoUrl(photo.storage_path);
+          const response = await fetch(photoUrl);
+          const blob = await response.blob();
+          const filename = photo.title || photo.filename;
+          const extension = filename.includes('.') ? '' : '.jpg';
+          zip.file(`${filename}${extension}`, blob);
+        } catch (error) {
+          console.error(`Failed to download ${photo.filename}:`, error);
+        }
+      }
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `selected-photos.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Complete",
+        description: `Downloaded ${selectedPhotos.length} photos`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download selected photos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-800 border-slate-600 text-white overflow-hidden">
@@ -193,7 +217,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           {/* Pricing Information */}
           <PricingInfo
             freePhotoLimit={freePhotoLimit}
-            pricePerPhoto={3}
+            pricePerPhoto={pricePerPhoto}
             selectedPhotosCount={selectedPhotos.length}
             extraPhotosCount={extraPhotosCount}
             totalCost={totalCost}
