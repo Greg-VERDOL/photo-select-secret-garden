@@ -1,23 +1,30 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useSecureViewing = (galleryId: string, clientEmail: string) => {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [isSessionValid, setIsSessionValid] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
 
   // Initialize viewing session
   useEffect(() => {
     if (!galleryId || !clientEmail) {
       console.warn('🔄 Skipping session initialization: Missing galleryId or clientEmail.', { galleryId: !!galleryId, clientEmail: !!clientEmail });
       setIsSessionValid(false);
+      setIsSessionLoading(false);
       return;
     }
+    setIsSessionLoading(true);
     console.log('🔄 Initializing secure viewing session for gallery:', galleryId, 'client:', clientEmail);
     initializeSession();
   }, [galleryId, clientEmail]);
 
   const initializeSession = async () => {
-    if (!galleryId || !clientEmail) return;
+    if (!galleryId || !clientEmail) {
+      setIsSessionLoading(false);
+      return;
+    }
 
     try {
       console.log('🔍 Checking for existing session...');
@@ -30,50 +37,51 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         .gt('expires_at', new Date().toISOString())
         .single();
 
-      if (sessionError) {
-        console.log('ℹ️ No existing session found:', sessionError.message);
+      if (sessionError && sessionError.code !== 'PGRST116') { // PGRST116: no rows found, which is fine
+        console.log('ℹ️ Error checking for existing session:', sessionError.message);
       }
 
       if (existingSession) {
         console.log('✅ Found existing valid session:', existingSession.session_token);
         setSessionToken(existingSession.session_token);
         setIsSessionValid(true);
-        return;
-      }
-
-      // Create new session
-      console.log('🆕 Creating new viewing session...');
-      const newSessionToken = generateSessionToken();
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour session
-
-      const clientIP = await getClientIP();
-      console.log('🌐 Client IP:', clientIP);
-
-      const { error } = await supabase
-        .from('viewing_sessions')
-        .insert({
-          gallery_id: galleryId,
-          client_email: clientEmail,
-          session_token: newSessionToken,
-          ip_address: clientIP,
-          user_agent: navigator.userAgent,
-          expires_at: expiresAt.toISOString(),
-          max_views: 1000,
-          current_views: 0
-        });
-
-      if (error) {
-        console.error('❌ Failed to create viewing session:', error);
-        setIsSessionValid(false);
       } else {
-        console.log('✅ Created new session:', newSessionToken);
-        setSessionToken(newSessionToken);
-        setIsSessionValid(true);
+        // Create new session
+        console.log('🆕 Creating new viewing session...');
+        const newSessionToken = generateSessionToken();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour session
+
+        const clientIP = await getClientIP();
+        console.log('🌐 Client IP:', clientIP);
+
+        const { error } = await supabase
+          .from('viewing_sessions')
+          .insert({
+            gallery_id: galleryId,
+            client_email: clientEmail,
+            session_token: newSessionToken,
+            ip_address: clientIP,
+            user_agent: navigator.userAgent,
+            expires_at: expiresAt.toISOString(),
+            max_views: 1000,
+            current_views: 0
+          });
+
+        if (error) {
+          console.error('❌ Failed to create viewing session:', error);
+          setIsSessionValid(false);
+        } else {
+          console.log('✅ Created new session:', newSessionToken);
+          setSessionToken(newSessionToken);
+          setIsSessionValid(true);
+        }
       }
     } catch (error) {
       console.error('❌ Error initializing secure viewing session:', error);
       setIsSessionValid(false);
+    } finally {
+      setIsSessionLoading(false);
     }
   };
 
@@ -172,6 +180,7 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
   return {
     sessionToken,
     isSessionValid,
+    isSessionLoading,
     generateSecureImageUrl,
     logDownloadAttempt
   };

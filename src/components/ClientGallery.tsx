@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -36,7 +35,7 @@ const ClientGallery = () => {
   } = useClientGalleryState();
 
   const clientEmail = useMemo(() => clientInfo.email || gallery?.client_email || '', [clientInfo.email, gallery]);
-  const { isSessionValid, generateSecureImageUrl, logDownloadAttempt } = useSecureViewing(gallery?.id || '', clientEmail);
+  const { isSessionValid, isSessionLoading, generateSecureImageUrl, logDownloadAttempt } = useSecureViewing(gallery?.id || '', clientEmail);
 
   const { navigateFullscreen, navigatePreview } = usePhotoNavigation(photos);
   const { handleSendSelection, handleSelectAll } = useClientGalleryActions(
@@ -62,11 +61,11 @@ const ClientGallery = () => {
     navigatePreview(direction, previewPhoto, setPreviewPhoto);
   };
 
-  if (loading) {
+  if (loading || isSessionLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
-          <div className="text-xl">{t('clientGallery.loading')}</div>
+          <div className="text-xl">{loading ? t('clientGallery.loading') : 'Initializing secure session...'}</div>
         </div>
       </div>
     );
