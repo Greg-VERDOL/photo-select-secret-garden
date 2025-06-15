@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +13,7 @@ interface CreateGalleryFormProps {
 }
 
 const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated, onCancel }) => {
+  const { t } = useTranslation();
   const [newGalleryData, setNewGalleryData] = useState({
     name: '',
     clientName: '',
@@ -23,8 +26,8 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
   const createNewGallery = async () => {
     if (!newGalleryData.name.trim()) {
       toast({
-        title: "Gallery name required",
-        description: "Please enter a name for the new gallery.",
+        title: t('createGalleryForm.galleryNameRequired'),
+        description: t('createGalleryForm.galleryNameRequiredDescription'),
         variant: "destructive"
       });
       return;
@@ -32,8 +35,8 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
 
     if (newGalleryData.freePhotoLimit < 0) {
       toast({
-        title: "Invalid free photo limit",
-        description: "Free photo limit must be 0 or greater.",
+        title: t('createGalleryForm.invalidFreePhotoLimit'),
+        description: t('createGalleryForm.invalidFreePhotoLimitDescription'),
         variant: "destructive"
       });
       return;
@@ -61,16 +64,19 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
       if (error) throw error;
 
       toast({
-        title: "Gallery created",
-        description: `Created new gallery with access code: ${data.access_code} and ${newGalleryData.freePhotoLimit} free photos`,
+        title: t('createGalleryForm.galleryCreated'),
+        description: t('createGalleryForm.galleryCreatedDescription', {
+          accessCode: data.access_code,
+          freePhotoLimit: newGalleryData.freePhotoLimit
+        }),
       });
 
       setNewGalleryData({ name: '', clientName: '', clientEmail: '', freePhotoLimit: 5 });
       onGalleryCreated();
     } catch (error) {
       toast({
-        title: "Error creating gallery",
-        description: "Failed to create new gallery",
+        title: t('createGalleryForm.errorCreatingGallery'),
+        description: t('createGalleryForm.errorCreatingGalleryDescription'),
         variant: "destructive"
       });
     } finally {
@@ -94,44 +100,44 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Gallery Name *
+            {t('createGalleryForm.galleryNameLabel')}
           </label>
           <Input
             value={newGalleryData.name}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, name: e.target.value })}
-            placeholder="Wedding - Johnson Family"
+            placeholder={t('createGalleryForm.galleryNamePlaceholder')}
             className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Client Name
+            {t('createGalleryForm.clientNameLabel')}
           </label>
           <Input
             value={newGalleryData.clientName}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, clientName: e.target.value })}
-            placeholder="John & Jane Johnson"
+            placeholder={t('createGalleryForm.clientNamePlaceholder')}
             className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Client Email
+            {t('createGalleryForm.clientEmailLabel')}
           </label>
           <Input
             type="email"
             value={newGalleryData.clientEmail}
             onChange={(e) => setNewGalleryData({ ...newGalleryData, clientEmail: e.target.value })}
-            placeholder="client@example.com"
+            placeholder={t('createGalleryForm.clientEmailPlaceholder')}
             className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Free Photo Limit
+            {t('createGalleryForm.freePhotoLimitLabel')}
           </label>
           <Input
             type="number"
@@ -142,7 +148,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             className="w-full bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus-visible:ring-slate-950 ring-offset-white"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Number of photos the client can select for free. They'll pay for additional selections.
+            {t('createGalleryForm.freePhotoLimitDescription')}
           </p>
         </div>
       </div>
@@ -155,7 +161,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
             className="flex-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
             disabled={isLoading}
           >
-            Cancel
+            {t('createGalleryForm.cancelButton')}
           </Button>
         )}
         <Button
@@ -163,7 +169,7 @@ const CreateGalleryForm: React.FC<CreateGalleryFormProps> = ({ onGalleryCreated,
           className="flex-1 bg-blue-600 hover:bg-blue-700"
           disabled={isLoading}
         >
-          {isLoading ? 'Creating...' : 'Create Gallery'}
+          {isLoading ? t('createGalleryForm.creatingGalleryButton') : t('createGalleryForm.createGalleryButton')}
         </Button>
       </div>
     </div>

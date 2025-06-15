@@ -1,0 +1,29 @@
+
+{
+  "createGalleryForm": {
+    "galleryNameRequired": "Gallery name required",
+    "galleryNameRequiredDescription": "Please enter a name for the new gallery.",
+    "invalidFreePhotoLimit": "Invalid free photo limit",
+    "invalidFreePhotoLimitDescription": "Free photo limit must be 0 or greater.",
+    "galleryCreated": "Gallery created",
+    "galleryCreatedDescription": "Created new gallery with access code: {{accessCode}} and {{freePhotoLimit}} free photos",
+    "errorCreatingGallery": "Error creating gallery",
+    "errorCreatingGalleryDescription": "Failed to create new gallery",
+    "galleryNameLabel": "Gallery Name *",
+    "galleryNamePlaceholder": "Wedding - Johnson Family",
+    "clientNameLabel": "Client Name",
+    "clientNamePlaceholder": "John & Jane Johnson",
+    "clientEmailLabel": "Client Email",
+    "clientEmailPlaceholder": "client@example.com",
+    "freePhotoLimitLabel": "Free Photo Limit",
+    "freePhotoLimitDescription": "Number of photos the client can select for free. They'll pay for additional selections.",
+    "cancelButton": "Cancel",
+    "createGalleryButton": "Create Gallery",
+    "creatingGalleryButton": "Creating..."
+  },
+  "galleriesHeader": {
+    "title": "Galleries",
+    "subtitle": "Manage your photo collections",
+    "newGalleryButton": "New Gallery"
+  }
+}

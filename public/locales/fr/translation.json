@@ -1,0 +1,29 @@
+
+{
+  "createGalleryForm": {
+    "galleryNameRequired": "Nom de la galerie requis",
+    "galleryNameRequiredDescription": "Veuillez saisir un nom pour la nouvelle galerie.",
+    "invalidFreePhotoLimit": "Limite de photos gratuites invalide",
+    "invalidFreePhotoLimitDescription": "La limite de photos gratuites doit être de 0 ou plus.",
+    "galleryCreated": "Galerie créée",
+    "galleryCreatedDescription": "Nouvelle galerie créée avec le code d'accès : {{accessCode}} et {{freePhotoLimit}} photos gratuites",
+    "errorCreatingGallery": "Erreur lors de la création de la galerie",
+    "errorCreatingGalleryDescription": "Échec de la création de la nouvelle galerie",
+    "galleryNameLabel": "Nom de la galerie *",
+    "galleryNamePlaceholder": "Mariage - Famille Dupont",
+    "clientNameLabel": "Nom du client",
+    "clientNamePlaceholder": "Jean et Jeanne Dupont",
+    "clientEmailLabel": "Email du client",
+    "clientEmailPlaceholder": "client@exemple.com",
+    "freePhotoLimitLabel": "Limite de photos gratuites",
+    "freePhotoLimitDescription": "Nombre de photos que le client peut sélectionner gratuitement. Il paiera pour les sélections supplémentaires.",
+    "cancelButton": "Annuler",
+    "createGalleryButton": "Créer la galerie",
+    "creatingGalleryButton": "Création en cours..."
+  },
+  "galleriesHeader": {
+    "title": "Galeries",
+    "subtitle": "Gérez vos collections de photos",
+    "newGalleryButton": "Nouvelle Galerie"
+  }
+}

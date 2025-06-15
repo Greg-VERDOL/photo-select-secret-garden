@@ -9,6 +9,7 @@ import AdminLogin from '@/components/AdminLogin';
 import ClientAccessForm from '@/components/ClientAccessForm';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentCancelled from '@/components/PaymentCancelled';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -38,7 +39,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 relative">
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <Routes>
         <Route path="/" element={<ClientAccessForm />} />
         <Route path="/gallery/:accessCode" element={<ClientGallery />} />
