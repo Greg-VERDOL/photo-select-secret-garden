@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Heart, CheckCircle } from 'lucide-react';
@@ -67,14 +68,12 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
             className="group"
           >
             <Card className="overflow-hidden bg-white/5 border-white/10 hover:border-blue-400/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10">
-              <div 
-                className="relative aspect-square overflow-hidden cursor-pointer"
-                onClick={() => onPhotoClick(photo)}
-              >
+              <div className="relative aspect-square overflow-hidden">
                 <WatermarkedImage
                   src={(photo as any).thumbnail}
                   alt={photo.title || photo.filename}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+                  onClick={() => onPhotoClick(photo)}
                 />
                 
                 {/* Selection overlay - Always visible on mobile, hover on desktop */}
@@ -82,7 +81,6 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('Heart button clicked for photo:', photo.id);
                       onToggleSelection(photo.id);
                     }}
                     className={`absolute top-2 right-2 p-2 rounded-full transition-all duration-300 touch-manipulation ${

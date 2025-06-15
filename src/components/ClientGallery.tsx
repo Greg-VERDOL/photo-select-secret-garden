@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download } from 'lucide-react';
@@ -36,7 +35,6 @@ const ClientGallery = () => {
   };
 
   const handlePhotoClick = (photo) => {
-    console.log('Photo clicked:', photo);
     setFullscreenPhoto(photo);
   };
 
@@ -85,13 +83,6 @@ const ClientGallery = () => {
       });
     }
   };
-
-  const handleCloseFullscreen = () => {
-    console.log('Closing fullscreen');
-    setFullscreenPhoto(null);
-  };
-
-  console.log('ClientGallery render - fullscreenPhoto:', fullscreenPhoto);
 
   if (loading) {
     return (
@@ -147,7 +138,7 @@ const ClientGallery = () => {
       <FullscreenPhotoModal
         photo={fullscreenPhoto}
         isOpen={!!fullscreenPhoto}
-        onClose={handleCloseFullscreen}
+        onClose={() => setFullscreenPhoto(null)}
         getPhotoUrl={getPhotoUrl}
         photos={photos}
         onNavigate={navigateFullscreen}
