@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, DollarSign, CreditCard, CheckCircle, XCircle, Image } from 'lucide-react';
+import { Settings } from 'lucide-react';
+import WatermarkSettings from './settings/WatermarkSettings';
+import PricingSettings from './settings/PricingSettings';
+import StripeSettings from './settings/StripeSettings';
 
 const SettingsTab: React.FC = () => {
   const [pricePerPhoto, setPricePerPhoto] = useState<string>('5.00');
@@ -165,136 +165,27 @@ const SettingsTab: React.FC = () => {
       </div>
 
       {/* Watermark Settings */}
-      <Card className="bg-white/5 border-white/10 backdrop-blur-xl rounded-2xl p-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <Image className="w-6 h-6 text-purple-400" />
-          <h2 className="text-xl font-semibold text-white">Watermark Configuration</h2>
-        </div>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Corner Watermark Text
-            </label>
-            <Input
-              type="text"
-              value={watermarkText}
-              onChange={(e) => setWatermarkText(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="© PHOTO STUDIO"
-            />
-            <p className="text-sm text-slate-400 mt-2">
-              This text will appear in the corners of gallery images
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Center Watermark Text
-            </label>
-            <Input
-              type="text"
-              value={centerWatermarkText}
-              onChange={(e) => setCenterWatermarkText(e.target.value)}
-              className="bg-slate-700 border-slate-600 text-white"
-              placeholder="PROOF"
-            />
-            <p className="text-sm text-slate-400 mt-2">
-              This text will appear in the center of gallery images when center watermark is enabled
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Watermark Style
-            </label>
-            <select
-              value={watermarkStyle}
-              onChange={(e) => setWatermarkStyle(e.target.value)}
-              className="w-full h-10 px-3 py-2 rounded-md border border-slate-600 bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="corners">Corners Only</option>
-              <option value="center">Center Only</option>
-              <option value="full">Full (Corners + Center)</option>
-              <option value="none">No Watermark</option>
-            </select>
-            <p className="text-sm text-slate-400 mt-2">
-              Choose how the watermark appears on images
-            </p>
-          </div>
-        </div>
-      </Card>
+      <WatermarkSettings
+        watermarkText={watermarkText}
+        setWatermarkText={setWatermarkText}
+        centerWatermarkText={centerWatermarkText}
+        setCenterWatermarkText={setCenterWatermarkText}
+        watermarkStyle={watermarkStyle}
+        setWatermarkStyle={setWatermarkStyle}
+      />
 
       {/* Pricing Settings */}
-      <Card className="bg-white/5 border-white/10 backdrop-blur-xl rounded-2xl p-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <DollarSign className="w-6 h-6 text-green-400" />
-          <h2 className="text-xl font-semibold text-white">Pricing Configuration</h2>
-        </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Price per Extra Photo (EUR)
-            </label>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1 max-w-xs">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">€</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={pricePerPhoto}
-                    onChange={(e) => setPricePerPhoto(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white pl-8"
-                    placeholder="5.00"
-                  />
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-slate-400 mt-2">
-              Clients will be charged this amount in EUR for each photo selected beyond their free limit
-            </p>
-          </div>
-        </div>
-      </Card>
+      <PricingSettings
+        pricePerPhoto={pricePerPhoto}
+        setPricePerPhoto={setPricePerPhoto}
+      />
 
       {/* Stripe Integration */}
-      <Card className="bg-white/5 border-white/10 backdrop-blur-xl rounded-2xl p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <CreditCard className="w-6 h-6 text-blue-400" />
-            <h2 className="text-xl font-semibold text-white">Stripe Integration</h2>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isStripeConnected ? (
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            ) : (
-              <XCircle className="w-5 h-5 text-red-400" />
-            )}
-            <span className={`text-sm font-medium ${isStripeConnected ? 'text-green-400' : 'text-red-400'}`}>
-              {isStripeConnected ? 'Connected' : 'Not Connected'}
-            </span>
-          </div>
-        </div>
-        
-        <div className="space-y-4">
-          <p className="text-slate-300">
-            Stripe is used to process payments in EUR when clients select more photos than their free limit.
-            Make sure your Stripe secret key is configured in the edge function secrets.
-          </p>
-          
-          <Button
-            onClick={testStripeConnection}
-            disabled={testingStripe}
-            variant="outline"
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
-          >
-            {testingStripe ? 'Testing...' : 'Test Stripe Connection'}
-          </Button>
-        </div>
-      </Card>
+      <StripeSettings
+        isStripeConnected={isStripeConnected}
+        testingStripe={testingStripe}
+        onTestConnection={testStripeConnection}
+      />
 
       {/* Save Button */}
       <div className="flex justify-center">
