@@ -20,6 +20,8 @@ serve(async (req) => {
       throw new Error("Session ID is required");
     }
 
+    console.log('Verifying payment for session:', sessionId);
+
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -27,6 +29,11 @@ serve(async (req) => {
 
     // Retrieve the checkout session
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log('Retrieved session:', {
+      id: session.id,
+      payment_status: session.payment_status,
+      metadata: session.metadata
+    });
 
     // Initialize Supabase client with service role key
     const supabaseClient = createClient(
@@ -38,15 +45,22 @@ serve(async (req) => {
     // Update payment session status
     const status = session.payment_status === 'paid' ? 'completed' : 'failed';
     
-    await supabaseClient
+    const { error: updateError } = await supabaseClient
       .from('payment_sessions')
       .update({ status })
       .eq('stripe_session_id', sessionId);
+
+    if (updateError) {
+      console.error('Error updating payment session:', updateError);
+    }
+
+    console.log('Payment session updated with status:', status);
 
     return new Response(JSON.stringify({ 
       status,
       payment_status: session.payment_status,
       amount_total: session.amount_total,
+      metadata: session.metadata
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

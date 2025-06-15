@@ -67,7 +67,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
   const totalCost = extraPhotosCount * pricePerPhoto;
   const needsPayment = extraPhotosCount > 0;
-  const needsEmail = needsPayment && (!clientEmail || clientEmail.trim() === '');
+  const needsEmail = (!clientEmail || clientEmail.trim() === '');
 
   const handleSubmit = async () => {
     if (needsEmail) {
@@ -84,12 +84,26 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
   const handleEmailSubmit = async (email: string) => {
     setShowEmailForm(false);
-    await handlePayment(email);
+    if (needsPayment) {
+      await handlePayment(email);
+    } else {
+      await saveSelections(email);
+    }
   };
 
   const handlePayment = async (emailToUse?: string) => {
     setIsProcessingPayment(true);
     const paymentEmail = emailToUse || clientEmail;
+    
+    if (!paymentEmail || paymentEmail.trim() === '') {
+      toast({
+        title: "Email required",
+        description: "Email address is required for payment processing.",
+        variant: "destructive"
+      });
+      setIsProcessingPayment(false);
+      return;
+    }
     
     try {
       console.log('Starting payment process for:', { galleryId, paymentEmail, selectedPhotos: selectedPhotos.length });
@@ -97,12 +111,9 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       // Store pending selections in localStorage before payment
       const pendingSelections = {
         galleryId,
-        clientEmail: paymentEmail,
-        selections: selectedPhotos.map(photoId => ({
-          gallery_id: galleryId,
-          photo_id: photoId,
-          client_email: paymentEmail,
-        }))
+        clientEmail: paymentEmail.trim(),
+        selectedPhotos: selectedPhotos,
+        timestamp: Date.now()
       };
       
       console.log('Storing pending selections:', pendingSelections);
@@ -111,7 +122,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           galleryId,
-          clientEmail: paymentEmail,
+          clientEmail: paymentEmail.trim(),
           extraPhotosCount
         }
       });
@@ -120,16 +131,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
       if (data?.url) {
         console.log('Payment URL created, redirecting to:', data.url);
-        // Open payment in new tab
-        window.open(data.url, '_blank');
-        
-        toast({
-          title: "Payment processing",
-          description: "Complete your payment in the new tab to finalize your selection.",
-        });
-        
-        // Close the modal but don't clear selections yet
-        onClose();
+        // Navigate in same tab instead of opening new tab
+        window.location.href = data.url;
       } else {
         throw new Error('No payment URL received');
       }
@@ -147,23 +150,34 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     }
   };
 
-  const saveSelections = async () => {
+  const saveSelections = async (emailToUse?: string) => {
+    const finalEmail = emailToUse || clientEmail;
+    
+    if (!finalEmail || finalEmail.trim() === '') {
+      toast({
+        title: "Email required",
+        description: "Email address is required to save selections.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      console.log('Saving free selections:', { galleryId, clientEmail, selectedPhotos });
+      console.log('Saving selections:', { galleryId, finalEmail, selectedPhotos });
       
       // Delete existing selections for this client and gallery
       await supabase
         .from('photo_selections')
         .delete()
         .eq('gallery_id', galleryId)
-        .eq('client_email', clientEmail);
+        .eq('client_email', finalEmail.trim());
 
       // Insert new selections
       if (selectedPhotos.length > 0) {
         const selections = selectedPhotos.map(photoId => ({
           gallery_id: galleryId,
           photo_id: photoId,
-          client_email: clientEmail,
+          client_email: finalEmail.trim(),
         }));
 
         console.log('Inserting selections:', selections);
@@ -260,7 +274,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
                 {isProcessingPayment ? (
                   "Processing..."
                 ) : needsEmail ? (
-                  "Enter Email for Payment"
+                  needsPayment ? "Enter Email for Payment" : "Enter Email to Save"
                 ) : needsPayment ? (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />

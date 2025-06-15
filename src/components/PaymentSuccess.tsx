@@ -12,14 +12,17 @@ const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [selectionsSaved, setSelectionsSaved] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
+    console.log('PaymentSuccess loaded with session_id:', sessionId);
+    
     if (sessionId) {
       verifyPaymentAndCompleteSelection(sessionId);
     } else {
-      // Check if there are pending selections to complete
+      // Check for pending selections even without session ID
       completePendingSelections();
     }
   }, [searchParams]);
@@ -27,39 +30,66 @@ const PaymentSuccess: React.FC = () => {
   const completePendingSelections = async () => {
     try {
       const pendingData = localStorage.getItem('pendingSelections');
+      console.log('Checking for pending selections:', pendingData);
+      
       if (pendingData) {
-        const { selections, galleryId, clientEmail } = JSON.parse(pendingData);
+        const { galleryId, clientEmail, selectedPhotos, timestamp } = JSON.parse(pendingData);
         
-        console.log('Completing pending selections:', { selections, galleryId, clientEmail });
+        // Check if data is not too old (within 1 hour)
+        const isRecent = Date.now() - timestamp < 3600000;
+        if (!isRecent) {
+          console.log('Pending selections too old, clearing...');
+          localStorage.removeItem('pendingSelections');
+          setLoading(false);
+          return;
+        }
         
-        // First, delete any existing selections for this client and gallery
+        console.log('Processing pending selections:', { galleryId, clientEmail, selectedPhotos: selectedPhotos?.length });
+        
+        if (!clientEmail || !galleryId || !selectedPhotos || selectedPhotos.length === 0) {
+          console.error('Invalid pending selection data');
+          localStorage.removeItem('pendingSelections');
+          setLoading(false);
+          return;
+        }
+
+        // Delete existing selections for this client and gallery
         const { error: deleteError } = await supabase
           .from('photo_selections')
           .delete()
           .eq('gallery_id', galleryId)
-          .eq('client_email', clientEmail);
+          .eq('client_email', clientEmail.trim());
 
         if (deleteError) {
           console.error('Error deleting existing selections:', deleteError);
         }
 
         // Insert new selections
-        if (selections && selections.length > 0) {
-          const { error: insertError } = await supabase
-            .from('photo_selections')
-            .insert(selections);
+        const selections = selectedPhotos.map(photoId => ({
+          gallery_id: galleryId,
+          photo_id: photoId,
+          client_email: clientEmail.trim(),
+        }));
 
-          if (insertError) throw insertError;
+        console.log('Inserting selections:', selections);
+        const { error: insertError } = await supabase
+          .from('photo_selections')
+          .insert(selections);
 
-          console.log('Successfully saved selections:', selections.length);
+        if (insertError) {
+          console.error('Error inserting selections:', insertError);
+          throw insertError;
         }
+
+        console.log('Successfully saved selections:', selections.length);
+        setSelectionsSaved(true);
 
         // Clear pending data
         localStorage.removeItem('pendingSelections');
 
         toast({
           title: "Selections saved!",
-          description: `Your ${selections.length} photo selection(s) have been completed.`,
+          description: `Your ${selectedPhotos.length} photo selection(s) have been completed.`,
         });
       }
     } catch (error) {
@@ -83,17 +113,20 @@ const PaymentSuccess: React.FC = () => {
         body: { sessionId }
       });
 
-      if (paymentError) throw paymentError;
+      if (paymentError) {
+        console.error('Payment verification error:', paymentError);
+        throw paymentError;
+      }
 
       console.log('Payment verification result:', paymentData);
       setPaymentDetails(paymentData);
 
       // Complete the photo selections if payment was successful
-      if (paymentData.status === 'completed') {
+      if (paymentData.status === 'completed' || paymentData.payment_status === 'paid') {
         console.log('Payment successful, completing selections...');
         await completePendingSelections();
       } else {
-        console.log('Payment not completed, status:', paymentData.status);
+        console.log('Payment not completed, status:', paymentData.status, paymentData.payment_status);
         setLoading(false);
       }
     } catch (error) {
@@ -132,7 +165,9 @@ const PaymentSuccess: React.FC = () => {
         <p className="text-slate-300 mb-6">
           {paymentDetails 
             ? 'Thank you for your payment. Your photo selection has been processed and we\'ll be in touch soon.'
-            : 'Your photo selection has been completed successfully.'
+            : selectionsSaved 
+              ? 'Your photo selection has been completed successfully.'
+              : 'Your request has been processed.'
           }
         </p>
 
