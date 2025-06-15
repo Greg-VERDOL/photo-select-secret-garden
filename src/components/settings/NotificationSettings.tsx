@@ -6,12 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface NotificationSettingsProps {
   adminEmail: string;
   setAdminEmail: (email: string) => void;
   notificationsEnabled: boolean;
   setNotificationsEnabled: (enabled: boolean) => void;
+  onTestNotification: () => void;
+  isTestingNotification: boolean;
 }
 
 const NotificationSettings: React.FC<NotificationSettingsProps> = ({
@@ -19,6 +22,8 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({
   setAdminEmail,
   notificationsEnabled,
   setNotificationsEnabled,
+  onTestNotification,
+  isTestingNotification,
 }) => {
   const { t } = useTranslation();
 
@@ -55,15 +60,25 @@ const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           <Label htmlFor="admin-email" className="text-white font-medium">
             Admin Email Address
           </Label>
-          <Input
-            id="admin-email"
-            type="email"
-            value={adminEmail}
-            onChange={(e) => setAdminEmail(e.target.value)}
-            placeholder="admin@yourdomain.com"
-            className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
-            disabled={!notificationsEnabled}
-          />
+          <div className="flex items-center space-x-2">
+            <Input
+              id="admin-email"
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder="admin@yourdomain.com"
+              className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 flex-grow"
+              disabled={!notificationsEnabled}
+            />
+            <Button
+              onClick={onTestNotification}
+              disabled={!notificationsEnabled || isTestingNotification}
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              {isTestingNotification ? 'Sending...' : 'Send Test'}
+            </Button>
+          </div>
           <p className="text-sm text-slate-400">
             This email will receive notifications about client photo selections
           </p>

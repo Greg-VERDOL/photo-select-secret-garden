@@ -32,26 +32,34 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log('Received notification request:', req.method, req.url);
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const notificationData: NotificationRequest = await req.json();
+    console.log('Notification data:', JSON.stringify(notificationData, null, 2));
 
     // Get admin notification settings
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from('app_settings')
       .select('key, value')
       .in('key', ['admin_notification_email', 'notifications_enabled']);
+
+    if (settingsError) {
+      console.error('Error fetching settings:', settingsError);
+      throw settingsError;
+    }
+    console.log('Fetched settings:', settings);
 
     const settingsMap = settings?.reduce((acc, setting) => {
       acc[setting.key] = setting.value;
       return acc;
     }, {} as Record<string, string>) || {};
 
-    // Check if notifications are enabled
-    if (settingsMap.notifications_enabled !== 'true') {
+    // Check if notifications are enabled (but allow test notifications to bypass)
+    if (settingsMap.notifications_enabled !== 'true' && notificationData.galleryId !== 'test-notification') {
       console.log('Notifications are disabled');
       return new Response(JSON.stringify({ message: 'Notifications disabled' }), {
         status: 200,
@@ -60,22 +68,25 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const adminEmail = settingsMap.admin_notification_email || 'admin@example.com';
+    console.log(`Notifications enabled: ${settingsMap.notifications_enabled}. Admin email: ${adminEmail}`);
 
-    // Check if notification was already sent for this gallery and client
-    const { data: existingNotification } = await supabase
-      .from('admin_notifications')
-      .select('id')
-      .eq('gallery_id', notificationData.galleryId)
-      .eq('client_email', notificationData.clientEmail)
-      .eq('type', 'photo_selection')
-      .single();
+    // Check if notification was already sent for this gallery and client (skip for test)
+    if (notificationData.galleryId !== 'test-notification') {
+      const { data: existingNotification } = await supabase
+        .from('admin_notifications')
+        .select('id')
+        .eq('gallery_id', notificationData.galleryId)
+        .eq('client_email', notificationData.clientEmail)
+        .eq('type', 'photo_selection')
+        .single();
 
-    if (existingNotification) {
-      console.log('Notification already sent for this selection');
-      return new Response(JSON.stringify({ message: 'Notification already sent' }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      if (existingNotification) {
+        console.log('Notification already sent for this selection');
+        return new Response(JSON.stringify({ message: 'Notification already sent' }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
     }
 
     // Create email content
@@ -112,6 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     // Send email
+    console.log(`Attempting to send email to ${adminEmail}`);
     const emailResponse = await resend.emails.send({
       from: "Photo Gallery <onboarding@resend.dev>",
       to: [adminEmail],
@@ -121,17 +133,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Admin notification sent:", emailResponse);
 
-    // Record the notification in database
-    await supabase
-      .from('admin_notifications')
-      .insert({
-        type: 'photo_selection',
-        gallery_id: notificationData.galleryId,
-        client_email: notificationData.clientEmail,
-        admin_email: adminEmail,
-        status: 'sent',
-        notification_data: notificationData
-      });
+    // Record the notification in database, unless it's a test
+    if (notificationData.galleryId !== 'test-notification') {
+      await supabase
+        .from('admin_notifications')
+        .insert({
+          type: 'photo_selection',
+          gallery_id: notificationData.galleryId,
+          client_email: notificationData.clientEmail,
+          admin_email: adminEmail,
+          status: 'sent',
+          notification_data: notificationData
+        });
+    }
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

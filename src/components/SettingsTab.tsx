@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +19,7 @@ const SettingsTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingStripe, setTestingStripe] = useState(false);
+  const [testingNotification, setTestingNotification] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -157,6 +157,65 @@ const SettingsTab: React.FC = () => {
     }
   };
 
+  const testNotification = async () => {
+    if (!adminEmail) {
+      toast({
+        title: 'Admin email required',
+        description: 'Please enter an email address before sending a test.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setTestingNotification(true);
+    toast({
+      title: 'Sending test email...',
+      description: `A test notification will be sent to ${adminEmail}.`,
+    });
+
+    try {
+      // Save settings first to ensure the edge function gets the latest email
+      await supabase
+        .from('app_settings')
+        .upsert({ key: 'admin_notification_email', value: adminEmail }, { onConflict: 'key' });
+      
+      await supabase
+        .from('app_settings')
+        .upsert({ key: 'notifications_enabled', value: notificationsEnabled.toString() }, { onConflict: 'key' });
+
+      const { error } = await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          galleryId: 'test-notification',
+          clientEmail: `test-client-${Date.now()}@example.com`,
+          clientName: 'Test Client',
+          selectedPhotosCount: 3,
+          extraPhotosCount: 1,
+          totalCost: 5.0,
+          galleryName: 'Test Gallery',
+          accessCode: 'TESTCODE',
+          selectedPhotos: [{ id: '1', filename: 'test-photo-1.jpg', title: 'Test Photo 1' }],
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Test email sent!',
+        description: 'Please check your inbox (and spam folder). It might take a minute to arrive.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to send test email',
+        description:
+          error.message ||
+          'Please check your Resend configuration and the edge function logs for more details.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTestingNotification(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -187,6 +246,8 @@ const SettingsTab: React.FC = () => {
         setAdminEmail={setAdminEmail}
         notificationsEnabled={notificationsEnabled}
         setNotificationsEnabled={setNotificationsEnabled}
+        onTestNotification={testNotification}
+        isTestingNotification={testingNotification}
       />
 
       {/* Watermark Settings */}
