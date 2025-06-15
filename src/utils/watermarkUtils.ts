@@ -1,9 +1,8 @@
-
 interface WatermarkConfig {
   watermarkText: string;
   centerWatermarkText: string;
   watermarkStyle: string;
-  clientEmail: string;
+  clientEmail?: string;
 }
 
 export const addWatermarks = (
@@ -21,7 +20,13 @@ export const addWatermarks = (
   if (showCorners) {
     // Corner watermarks with client email and timestamp
     const timestamp = new Date().toLocaleString();
-    const watermarkWithInfo = `${watermarkText} - ${clientEmail} - ${timestamp}`;
+    
+    const infoParts = [watermarkText];
+    if (clientEmail) {
+      infoParts.push(clientEmail);
+    }
+    infoParts.push(timestamp);
+    const watermarkWithInfo = infoParts.join(' - ');
     
     ctx.font = `${Math.max(12, width * 0.015)}px Arial`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';

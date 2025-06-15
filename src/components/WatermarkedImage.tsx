@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { addWatermarks, addNoisePattern } from '@/utils/watermarkUtils';
 
 interface WatermarkedImageProps {
   src: string;
@@ -21,10 +23,13 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
   showWatermark = true,
   isAdminView = false
 }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [watermarkText, setWatermarkText] = useState('© PHOTO STUDIO');
   const [watermarkStyle, setWatermarkStyle] = useState('corners');
   const [centerWatermarkText, setCenterWatermarkText] = useState('PROOF');
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (showWatermark && !isAdminView) {
@@ -65,65 +70,92 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
     }
   };
 
-  // For admin view, don't show watermarks
   const shouldShowWatermark = showWatermark && !isAdminView;
-  const showCorners = shouldShowWatermark && (watermarkStyle === 'corners' || watermarkStyle === 'full');
-  const showCenter = shouldShowWatermark && (watermarkStyle === 'center' || watermarkStyle === 'full');
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container || !src || !settingsLoaded) return;
+
+    let img: HTMLImageElement;
+
+    const draw = () => {
+      if (!img || img.naturalWidth === 0) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      
+      if (containerWidth === 0 || containerHeight === 0) return;
+
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let scale = 1;
+      if (fitContainer) { // object-cover
+        scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+      } else { // object-contain
+        scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+      }
+      
+      const scaledWidth = img.naturalWidth * scale;
+      const scaledHeight = img.naturalHeight * scale;
+      
+      const x = (canvas.width - scaledWidth) / 2;
+      const y = (canvas.height - scaledHeight) / 2;
+
+      ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+      
+      if (shouldShowWatermark) {
+        addWatermarks(ctx, canvas.width, canvas.height, {
+          watermarkText,
+          centerWatermarkText,
+          watermarkStyle,
+        });
+        addNoisePattern(ctx, canvas.width, canvas.height);
+      }
+      setIsLoading(false);
+    };
+
+    setIsLoading(true);
+    img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = src;
+    img.onload = draw;
+    img.onerror = () => {
+      setIsLoading(false);
+      console.error(`Failed to load image for canvas: ${src}`);
+    };
+
+    const resizeObserver = new ResizeObserver(draw);
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [src, settingsLoaded, fitContainer, shouldShowWatermark, watermarkText, watermarkStyle, centerWatermarkText]);
 
   return (
-    <div className={cn("relative inline-block", className)} onClick={onClick}>
-      <img 
-        src={src} 
-        alt={alt} 
-        className={cn(
-          "block",
-          fitContainer 
-            ? "w-full h-full object-cover" 
-            : "max-w-[90vw] max-h-[80vh]"
-        )}
-        draggable={false}
-        onContextMenu={(e) => e.preventDefault()}
-        style={{ userSelect: 'none' }}
-      />
-      
-      {/* Watermark overlay - only show if watermark is enabled, settings are loaded, and not admin view */}
-      {shouldShowWatermark && settingsLoaded && (
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Corner watermarks */}
-          {showCorners && (
-            <>
-              <div className="absolute top-4 left-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
-                {watermarkText}
-              </div>
-              
-              <div className="absolute bottom-4 right-4 text-white/30 text-sm font-bold backdrop-blur-sm bg-black/20 px-2 py-1 rounded">
-                {watermarkText}
-              </div>
-            </>
-          )}
-          
-          {/* Center watermark */}
-          {showCenter && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/20 text-2xl font-bold backdrop-blur-sm bg-black/10 px-4 py-2 rounded rotate-12">
-              {centerWatermarkText}
-            </div>
-          )}
-          
-          {/* Subtle pattern overlay to make screenshot editing harder */}
-          <div 
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage: `repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 10px,
-                rgba(255,255,255,0.1) 10px,
-                rgba(255,255,255,0.1) 20px
-              )`
-            }}
-          />
+    <div ref={containerRef} className={cn("relative w-full h-full", className)} onClick={onClick}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800/20">
+          <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
+      <canvas
+        ref={canvasRef}
+        className={cn(
+          "w-full h-full transition-opacity duration-300",
+          isLoading ? "opacity-0" : "opacity-100"
+        )}
+        style={{ userSelect: 'none' }}
+        onContextMenu={(e) => e.preventDefault()}
+        aria-label={alt}
+      />
     </div>
   );
 };
