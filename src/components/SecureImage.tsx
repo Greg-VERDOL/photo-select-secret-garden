@@ -1,6 +1,9 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { useSecureViewing } from '@/hooks/useSecureViewing';
+import { useSecurityEvents } from '@/hooks/useSecurityEvents';
+import { useSecureImageLoader } from '@/hooks/useSecureImageLoader';
 
 interface SecureImageProps {
   photoId: string;
@@ -27,199 +30,23 @@ const SecureImage: React.FC<SecureImageProps> = ({
   centerWatermarkText = 'PROOF',
   watermarkStyle = 'corners'
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const { generateSecureImageUrl, logDownloadAttempt, isSessionValid } = useSecureViewing(galleryId, clientEmail);
-
-  // Security event handlers
-  const handleRightClick = useCallback((e: MouseEvent) => {
-    e.preventDefault();
-    logDownloadAttempt(photoId, 'right_click');
-    return false;
-  }, [photoId, logDownloadAttempt]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Block common screenshot/save shortcuts
-    if (
-      (e.ctrlKey && (e.key === 's' || e.key === 'S')) || // Ctrl+S
-      (e.ctrlKey && e.shiftKey && (e.key === 'i' || e.key === 'I')) || // Ctrl+Shift+I
-      e.key === 'F12' || // F12
-      (e.ctrlKey && e.shiftKey && (e.key === 'j' || e.key === 'J')) || // Ctrl+Shift+J
-      (e.ctrlKey && (e.key === 'u' || e.key === 'U')) // Ctrl+U
-    ) {
-      e.preventDefault();
-      logDownloadAttempt(photoId, 'keyboard_shortcut');
-      return false;
-    }
-  }, [photoId, logDownloadAttempt]);
-
-  const handleDevToolsDetection = useCallback(() => {
-    const threshold = 160;
-    if (window.outerHeight - window.innerHeight > threshold || 
-        window.outerWidth - window.innerWidth > threshold) {
-      logDownloadAttempt(photoId, 'dev_tools_detected');
-      // Keep detection but don't show visual feedback for now
-    }
-  }, [photoId, logDownloadAttempt]);
-
-  useEffect(() => {
-    // Add security event listeners
-    document.addEventListener('contextmenu', handleRightClick);
-    document.addEventListener('keydown', handleKeyDown);
-    
-    // Dev tools detection (reduced frequency to avoid spam)
-    const devToolsInterval = setInterval(handleDevToolsDetection, 5000);
-    
-    // Disable drag and drop
-    const handleDragStart = (e: DragEvent) => {
-      e.preventDefault();
-      logDownloadAttempt(photoId, 'drag_attempt');
-    };
-    
-    document.addEventListener('dragstart', handleDragStart);
-
-    return () => {
-      document.removeEventListener('contextmenu', handleRightClick);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('dragstart', handleDragStart);
-      clearInterval(devToolsInterval);
-    };
-  }, [handleRightClick, handleKeyDown, handleDevToolsDetection, photoId, logDownloadAttempt]);
-
-  useEffect(() => {
-    if (!isSessionValid) {
-      console.log('Session not valid for photo:', photoId);
-      return;
-    }
-    
-    const loadSecureImage = async () => {
-      setIsLoading(true);
-      setLoadError(null);
-      
-      try {
-        console.log('Loading secure image for photo:', photoId);
-        const secureUrl = await generateSecureImageUrl(photoId, storagePath);
-        
-        if (!secureUrl) {
-          throw new Error('Failed to generate secure URL');
-        }
-
-        console.log('Generated secure URL for photo:', photoId, secureUrl);
-
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
-        img.onload = () => {
-          console.log('Image loaded successfully for photo:', photoId);
-          const canvas = canvasRef.current;
-          if (!canvas) {
-            console.error('Canvas not available');
-            return;
-          }
-
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            console.error('Canvas context not available');
-            return;
-          }
-
-          // Set canvas size
-          canvas.width = img.width;
-          canvas.height = img.height;
-
-          // Draw image
-          ctx.drawImage(img, 0, 0);
-
-          // Add dynamic watermarks
-          addWatermarks(ctx, canvas.width, canvas.height);
-
-          // Add noise pattern to make reverse engineering harder
-          addNoisePattern(ctx, canvas.width, canvas.height);
-
-          setIsLoading(false);
-        };
-
-        img.onerror = (error) => {
-          console.error('Failed to load secure image for photo:', photoId, error);
-          setLoadError('Failed to load image');
-          setIsLoading(false);
-        };
-
-        img.src = secureUrl;
-      } catch (error) {
-        console.error('Error loading secure image for photo:', photoId, error);
-        setLoadError(error instanceof Error ? error.message : 'Unknown error');
-        setIsLoading(false);
-      }
-    };
-
-    loadSecureImage();
-  }, [photoId, storagePath, generateSecureImageUrl, isSessionValid, watermarkText, centerWatermarkText, watermarkStyle]);
-
-  const addWatermarks = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const showCorners = watermarkStyle === 'corners' || watermarkStyle === 'full';
-    const showCenter = watermarkStyle === 'center' || watermarkStyle === 'full';
-
-    ctx.save();
-
-    if (showCorners) {
-      // Corner watermarks with client email and timestamp
-      const timestamp = new Date().toLocaleString();
-      const watermarkWithInfo = `${watermarkText} - ${clientEmail} - ${timestamp}`;
-      
-      ctx.font = `${Math.max(12, width * 0.015)}px Arial`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.lineWidth = 2;
-
-      // Top-left
-      ctx.strokeText(watermarkWithInfo, 20, 30);
-      ctx.fillText(watermarkWithInfo, 20, 30);
-
-      // Bottom-right
-      const textWidth = ctx.measureText(watermarkWithInfo).width;
-      ctx.strokeText(watermarkWithInfo, width - textWidth - 20, height - 20);
-      ctx.fillText(watermarkWithInfo, width - textWidth - 20, height - 20);
-    }
-
-    if (showCenter) {
-      // Center watermark
-      ctx.font = `${Math.max(24, width * 0.03)}px Arial`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.lineWidth = 3;
-      ctx.textAlign = 'center';
-      
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      ctx.rotate(Math.PI / 8); // 22.5 degrees
-      
-      ctx.strokeText(centerWatermarkText, 0, 0);
-      ctx.fillText(centerWatermarkText, 0, 0);
-      
-      ctx.restore();
-    }
-
-    ctx.restore();
-  };
-
-  const addNoisePattern = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    // Add subtle noise pattern to make automated watermark removal harder
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-      if (Math.random() < 0.001) { // Very sparse noise
-        const noise = Math.random() * 10 - 5;
-        data[i] = Math.max(0, Math.min(255, data[i] + noise));     // R
-        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
-        data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-  };
+  
+  // Set up security event listeners
+  useSecurityEvents({ photoId, logDownloadAttempt });
+  
+  // Load and render the secure image
+  const { canvasRef, isLoading, loadError } = useSecureImageLoader({
+    photoId,
+    storagePath,
+    galleryId,
+    clientEmail,
+    watermarkText,
+    centerWatermarkText,
+    watermarkStyle,
+    generateSecureImageUrl,
+    isSessionValid
+  });
 
   const handleCanvasClick = () => {
     if (onClick) {
