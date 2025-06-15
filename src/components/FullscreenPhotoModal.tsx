@@ -1,3 +1,4 @@
+
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -120,12 +121,12 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           </Button>
         )}
 
-        {/* Image container that fits within viewport */}
-        <div className="w-full h-full flex items-center justify-center pt-16 pb-4 px-4">
+        {/* Image container with proper constraints */}
+        <div className="w-full h-full flex items-center justify-center p-4" style={{ paddingTop: '80px', paddingBottom: '20px' }}>
           <WatermarkedImage
             src={getPhotoUrl(photo.storage_path)}
             alt={photo.title || photo.filename}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full w-auto h-auto object-contain"
           />
         </div>
       </DialogContent>
