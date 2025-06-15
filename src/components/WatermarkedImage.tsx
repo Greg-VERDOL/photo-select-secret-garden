@@ -11,11 +11,11 @@ interface WatermarkedImageProps {
 
 const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ src, alt, className, onClick }) => {
   return (
-    <div className={cn("relative", className)} onClick={onClick}>
+    <div className={cn("relative inline-block", className)} onClick={onClick}>
       <img 
         src={src} 
         alt={alt} 
-        className="w-full h-full object-contain"
+        className="block max-w-[90vw] max-h-[80vh]"
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
         style={{ userSelect: 'none' }}
