@@ -80,7 +80,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
               size="sm"
               variant="outline"
               onClick={onClose}
-              className="border-white/30 text-white hover:bg-white/10"
+              className="bg-black/50 border-white/50 text-white hover:bg-black/70 hover:border-white"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -92,7 +92,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           <Button
             size="lg"
             variant="outline"
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 border-white/30 text-white hover:bg-white/10"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 border-white/50 text-white hover:bg-black/70 hover:border-white"
             onClick={() => onNavigate('prev')}
           >
             <ChevronLeft className="w-6 h-6" />
@@ -103,7 +103,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           <Button
             size="lg"
             variant="outline"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 border-white/30 text-white hover:bg-white/10"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 border-white/50 text-white hover:bg-black/70 hover:border-white"
             onClick={() => onNavigate('next')}
           >
             <ChevronRight className="w-6 h-6" />
