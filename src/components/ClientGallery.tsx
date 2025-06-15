@@ -16,6 +16,7 @@ import PhotoPreviewModal from './PhotoPreviewModal';
 import SelectionModal from './SelectionModal';
 import FullscreenPhotoModal from './FullscreenPhotoModal';
 import { useTranslation } from 'react-i18next';
+import { useSecureViewing } from '@/hooks/useSecureViewing';
 
 const ClientGallery = () => {
   const navigate = useNavigate();
@@ -33,6 +34,9 @@ const ClientGallery = () => {
     previewPhoto,
     setPreviewPhoto
   } = useClientGalleryState();
+
+  const clientEmail = useMemo(() => clientInfo.email || gallery?.client_email || '', [clientInfo.email, gallery]);
+  const { isSessionValid, generateSecureImageUrl, logDownloadAttempt } = useSecureViewing(gallery?.id || '', clientEmail);
 
   const { navigateFullscreen, navigatePreview } = usePhotoNavigation(photos);
   const { handleSendSelection, handleSelectAll } = useClientGalleryActions(
@@ -95,11 +99,14 @@ const ClientGallery = () => {
           photos={photosForGrid}
           selectedPhotos={selectedPhotos}
           galleryId={gallery.id}
-          clientEmail={clientInfo.email || gallery.client_email || ''}
+          clientEmail={clientEmail}
           onPhotoClick={handlePhotoClick}
           onToggleSelection={togglePhotoSelection}
           onSelectAll={handleSelectAll}
           onDeselectAll={deselectAllPhotos}
+          isSessionValid={isSessionValid}
+          generateSecureImageUrl={generateSecureImageUrl}
+          logDownloadAttempt={logDownloadAttempt}
         />
       </div>
 

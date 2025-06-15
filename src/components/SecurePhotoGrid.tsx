@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Square, CheckSquare, X } from 'lucide-react';
@@ -23,6 +22,9 @@ interface SecurePhotoGridProps {
   onToggleSelection: (photoId: string) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  isSessionValid: boolean;
+  generateSecureImageUrl: (photoId: string, storagePath: string) => Promise<string | null>;
+  logDownloadAttempt: (photoId: string, attemptType: string) => void;
 }
 
 const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
@@ -33,7 +35,10 @@ const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
   onPhotoClick,
   onToggleSelection,
   onSelectAll,
-  onDeselectAll
+  onDeselectAll,
+  isSessionValid,
+  generateSecureImageUrl,
+  logDownloadAttempt
 }) => {
   const { t } = useTranslation();
   const [watermarkSettings, setWatermarkSettings] = useState({
@@ -165,6 +170,9 @@ const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
                   watermarkText={watermarkSettings.watermarkText}
                   centerWatermarkText={watermarkSettings.centerWatermarkText}
                   watermarkStyle={watermarkSettings.watermarkStyle}
+                  isSessionValid={isSessionValid}
+                  generateSecureImageUrl={generateSecureImageUrl}
+                  logDownloadAttempt={logDownloadAttempt}
                 />
               </div>
 

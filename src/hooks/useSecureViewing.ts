@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,11 +7,18 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
 
   // Initialize viewing session
   useEffect(() => {
+    if (!galleryId || !clientEmail) {
+      console.warn('🔄 Skipping session initialization: Missing galleryId or clientEmail.', { galleryId: !!galleryId, clientEmail: !!clientEmail });
+      setIsSessionValid(false);
+      return;
+    }
     console.log('🔄 Initializing secure viewing session for gallery:', galleryId, 'client:', clientEmail);
     initializeSession();
   }, [galleryId, clientEmail]);
 
   const initializeSession = async () => {
+    if (!galleryId || !clientEmail) return;
+
     try {
       console.log('🔍 Checking for existing session...');
       // Check for existing valid session

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useSecureViewing } from '@/hooks/useSecureViewing';
 import { useSecurityEvents } from '@/hooks/useSecurityEvents';
 import { useSecureImageLoader } from '@/hooks/useSecureImageLoader';
 
@@ -16,6 +15,9 @@ interface SecureImageProps {
   watermarkText?: string;
   centerWatermarkText?: string;
   watermarkStyle?: string;
+  isSessionValid: boolean;
+  generateSecureImageUrl: (photoId: string, storagePath: string) => Promise<string | null>;
+  logDownloadAttempt: (photoId: string, attemptType: string) => void;
 }
 
 const SecureImage: React.FC<SecureImageProps> = ({
@@ -28,10 +30,11 @@ const SecureImage: React.FC<SecureImageProps> = ({
   onClick,
   watermarkText = '© PHOTO STUDIO',
   centerWatermarkText = 'PROOF',
-  watermarkStyle = 'corners'
+  watermarkStyle = 'corners',
+  isSessionValid,
+  generateSecureImageUrl,
+  logDownloadAttempt,
 }) => {
-  const { generateSecureImageUrl, logDownloadAttempt, isSessionValid } = useSecureViewing(galleryId, clientEmail);
-  
   // Set up security event listeners
   useSecurityEvents({ photoId, logDownloadAttempt });
   
