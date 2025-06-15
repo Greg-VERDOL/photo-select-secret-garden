@@ -27,13 +27,72 @@ const PaymentSuccess: React.FC = () => {
     }
   }, [searchParams]);
 
+  const savePendingSelections = async (pendingData: any) => {
+    const { galleryId, clientEmail, selectedPhotos } = pendingData;
+    
+    console.log('Saving pending selections after payment:', { galleryId, clientEmail, selectedPhotos: selectedPhotos?.length });
+    
+    if (!clientEmail || !galleryId || !selectedPhotos || selectedPhotos.length === 0) {
+      console.error('Invalid pending selection data');
+      return false;
+    }
+
+    try {
+      // Delete existing selections for this client and gallery to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('photo_selections')
+        .delete()
+        .eq('gallery_id', galleryId)
+        .eq('client_email', clientEmail.trim());
+
+      if (deleteError) {
+        console.error('Error deleting existing selections:', deleteError);
+        // Continue anyway, as this might just mean no existing selections
+      }
+
+      // Insert new selections
+      const selections = selectedPhotos.map(photoId => ({
+        gallery_id: galleryId,
+        photo_id: photoId,
+        client_email: clientEmail.trim(),
+      }));
+
+      console.log('Inserting selections after payment:', selections);
+      const { error: insertError } = await supabase
+        .from('photo_selections')
+        .insert(selections);
+
+      if (insertError) {
+        console.error('Error inserting selections after payment:', insertError);
+        throw insertError;
+      }
+
+      console.log('Successfully saved selections after payment:', selections.length);
+      setSelectionsSaved(true);
+      
+      // Store completion confirmation
+      const completedSelections = {
+        ...pendingData,
+        completed: true,
+        completedAt: Date.now()
+      };
+      localStorage.setItem('completedSelections', JSON.stringify(completedSelections));
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving selections after payment:', error);
+      return false;
+    }
+  };
+
   const completePendingSelections = async () => {
     try {
       const pendingData = localStorage.getItem('pendingSelections');
       console.log('Checking for pending selections:', pendingData);
       
       if (pendingData) {
-        const { galleryId, clientEmail, selectedPhotos, timestamp } = JSON.parse(pendingData);
+        const parsed = JSON.parse(pendingData);
+        const { timestamp } = parsed;
         
         // Check if data is not too old (within 1 hour)
         const isRecent = Date.now() - timestamp < 3600000;
@@ -44,58 +103,28 @@ const PaymentSuccess: React.FC = () => {
           return;
         }
         
-        console.log('Processing pending selections:', { galleryId, clientEmail, selectedPhotos: selectedPhotos?.length });
+        const success = await savePendingSelections(parsed);
         
-        if (!clientEmail || !galleryId || !selectedPhotos || selectedPhotos.length === 0) {
-          console.error('Invalid pending selection data');
+        if (success) {
+          // Clear pending data only after successful save
           localStorage.removeItem('pendingSelections');
-          setLoading(false);
-          return;
+          
+          toast({
+            title: "Payment successful!",
+            description: `Your ${parsed.selectedPhotos.length} photo selection(s) have been completed.`,
+          });
+        } else {
+          toast({
+            title: "Payment successful, but...",
+            description: "There was an issue saving your selections. Please contact us.",
+            variant: "destructive"
+          });
         }
-
-        // Delete existing selections for this client and gallery
-        const { error: deleteError } = await supabase
-          .from('photo_selections')
-          .delete()
-          .eq('gallery_id', galleryId)
-          .eq('client_email', clientEmail.trim());
-
-        if (deleteError) {
-          console.error('Error deleting existing selections:', deleteError);
-        }
-
-        // Insert new selections
-        const selections = selectedPhotos.map(photoId => ({
-          gallery_id: galleryId,
-          photo_id: photoId,
-          client_email: clientEmail.trim(),
-        }));
-
-        console.log('Inserting selections:', selections);
-        const { error: insertError } = await supabase
-          .from('photo_selections')
-          .insert(selections);
-
-        if (insertError) {
-          console.error('Error inserting selections:', insertError);
-          throw insertError;
-        }
-
-        console.log('Successfully saved selections:', selections.length);
-        setSelectionsSaved(true);
-
-        // Clear pending data
-        localStorage.removeItem('pendingSelections');
-
-        toast({
-          title: "Selections saved!",
-          description: `Your ${selectedPhotos.length} photo selection(s) have been completed.`,
-        });
       }
     } catch (error) {
       console.error('Error completing pending selections:', error);
       toast({
-        title: "Error saving selections",
+        title: "Error processing selections",
         description: "Please contact us if your selections weren't processed.",
         variant: "destructive"
       });
@@ -127,6 +156,11 @@ const PaymentSuccess: React.FC = () => {
         await completePendingSelections();
       } else {
         console.log('Payment not completed, status:', paymentData.status, paymentData.payment_status);
+        toast({
+          title: "Payment verification failed",
+          description: "Please contact us if you were charged.",
+          variant: "destructive"
+        });
         setLoading(false);
       }
     } catch (error) {
@@ -145,7 +179,7 @@ const PaymentSuccess: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Processing your selection...</p>
+          <p className="text-white">Processing your payment and selections...</p>
         </div>
       </div>
     );
