@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Square, SelectAll, X } from 'lucide-react';
+import { Check, Square, CheckSquare, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SecureImage from './SecureImage';
 import { supabase } from '@/integrations/supabase/client';
@@ -99,7 +99,7 @@ const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
               </>
             ) : (
               <>
-                <SelectAll className="w-4 h-4 mr-2" />
+                <CheckSquare className="w-4 h-4 mr-2" />
                 Select All
               </>
             )}
