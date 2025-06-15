@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,10 @@ const ClientGallery = () => {
   const { selectedPhotos, clientInfo, togglePhotoSelection, selectAllPhotos, deselectAllPhotos } = usePhotoSelections(gallery);
   const { lightboxPhoto, setLightboxPhoto, navigateLightbox, closeLightbox } = useLightbox(photos);
 
+  const photosForGrid = useMemo(() => {
+    return photos.map(photo => ({ ...photo, title: undefined, filename: '' }));
+  }, [photos]);
+
   const handleSendSelection = () => {
     if (selectedPhotos.size === 0) {
       toast({
@@ -37,7 +40,7 @@ const ClientGallery = () => {
     setShowSelectionModal(true);
   };
 
-  const handlePhotoClick = (photo) => {
+  const handlePhotoClick = (photo: any) => {
     setPreviewPhoto(photo);
   };
 
@@ -109,7 +112,7 @@ const ClientGallery = () => {
 
       <div className="max-w-7xl mx-auto p-3 md:p-6">
         <PhotoGalleryGrid
-          photos={photos}
+          photos={photosForGrid}
           selectedPhotos={selectedPhotos}
           onPhotoClick={handlePhotoClick}
           onToggleSelection={togglePhotoSelection}
