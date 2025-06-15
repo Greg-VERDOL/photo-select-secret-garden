@@ -33,12 +33,13 @@ const PaymentSuccess: React.FC = () => {
     console.log('Saving pending selections after payment:', { galleryId, clientEmail, selectedPhotos: selectedPhotos?.length });
     
     if (!clientEmail || !galleryId || !selectedPhotos || selectedPhotos.length === 0) {
-      console.error('Invalid pending selection data');
+      console.error('Invalid pending selection data:', { clientEmail, galleryId, selectedPhotosLength: selectedPhotos?.length });
       return false;
     }
 
     try {
       // Delete existing selections for this client and gallery to avoid duplicates
+      console.log('Deleting existing selections for client:', clientEmail);
       const { error: deleteError } = await supabase
         .from('photo_selections')
         .delete()
@@ -48,6 +49,8 @@ const PaymentSuccess: React.FC = () => {
       if (deleteError) {
         console.error('Error deleting existing selections:', deleteError);
         // Continue anyway, as this might just mean no existing selections
+      } else {
+        console.log('Successfully deleted existing selections');
       }
 
       // Insert new selections
@@ -57,8 +60,8 @@ const PaymentSuccess: React.FC = () => {
         client_email: clientEmail.trim(),
       }));
 
-      console.log('Inserting selections after payment:', selections);
-      const { error: insertError } = await supabase
+      console.log('Inserting new selections after payment:', selections);
+      const { data: insertData, error: insertError } = await supabase
         .from('photo_selections')
         .insert(selections);
 
@@ -67,7 +70,7 @@ const PaymentSuccess: React.FC = () => {
         throw insertError;
       }
 
-      console.log('Successfully saved selections after payment:', selections.length);
+      console.log('Successfully saved selections after payment:', selections.length, insertData);
       setSelectionsSaved(true);
       
       // Store completion confirmation
@@ -103,6 +106,7 @@ const PaymentSuccess: React.FC = () => {
           return;
         }
         
+        console.log('Processing pending selections:', parsed);
         const success = await savePendingSelections(parsed);
         
         if (success) {
@@ -120,6 +124,8 @@ const PaymentSuccess: React.FC = () => {
             variant: "destructive"
           });
         }
+      } else {
+        console.log('No pending selections found');
       }
     } catch (error) {
       console.error('Error completing pending selections:', error);
