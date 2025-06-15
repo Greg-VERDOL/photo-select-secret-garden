@@ -45,7 +45,15 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: settings, error: settingsError } = await supabase
       .from('app_settings')
       .select('key, value')
-      .in('key', ['admin_notification_email', 'notifications_enabled']);
+      .in('key', [
+        'price_per_extra_photo_cents', 
+        'stripe_connected', 
+        'watermark_text', 
+        'watermark_style', 
+        'center_watermark_text',
+        'admin_notification_email',
+        'notifications_enabled'
+      ]);
 
     if (settingsError) {
       console.error('Error fetching settings:', settingsError);
@@ -122,10 +130,10 @@ const handler = async (req: Request): Promise<Response> => {
       </p>
     `;
 
-    // Send email
-    console.log(`Attempting to send email to ${adminEmail}`);
+    // Send email using verified domain
+    console.log(`Attempting to send email to ${adminEmail} from contact@flawvisuals.fr`);
     const emailResponse = await resend.emails.send({
-      from: "Photo Gallery <onboarding@resend.dev>",
+      from: "Flawvisuals <contact@flawvisuals.fr>",
       to: [adminEmail],
       subject: `New Photo Selection - ${notificationData.galleryName}`,
       html: emailContent,
