@@ -10,7 +10,7 @@ interface WatermarkedImageProps {
 
 const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ src, alt, className, onClick }) => {
   return (
-    <div className="relative inline-block" onClick={onClick}>
+    <div className="relative w-full h-full" onClick={onClick}>
       <img 
         src={src} 
         alt={alt} 

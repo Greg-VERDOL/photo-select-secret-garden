@@ -1,4 +1,3 @@
-
 import React, { useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -122,7 +121,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
         )}
 
         {/* Image */}
-        <div className="w-full h-full flex items-center justify-center p-16">
+        <div className="w-full h-full flex items-center justify-center p-4">
           <WatermarkedImage
             src={getPhotoUrl(photo.storage_path)}
             alt={photo.title || photo.filename}
