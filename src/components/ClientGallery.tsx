@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGalleryData } from '@/hooks/useGalleryData';
@@ -55,33 +56,6 @@ const ClientGallery = () => {
     }
     
     setFullscreenPhoto(photos[newIndex]);
-  };
-
-  const handleDownloadPhoto = async (photo) => {
-    try {
-      const photoUrl = getPhotoUrl(photo.storage_path);
-      const response = await fetch(photoUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = photo.title || photo.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Photo downloaded",
-        description: `Downloaded ${photo.title || photo.filename}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download failed",
-        description: "Failed to download photo",
-        variant: "destructive"
-      });
-    }
   };
 
   if (loading) {
@@ -142,8 +116,6 @@ const ClientGallery = () => {
         getPhotoUrl={getPhotoUrl}
         photos={photos}
         onNavigate={navigateFullscreen}
-        allowDownload={true}
-        onDownload={handleDownloadPhoto}
       />
 
       <SelectionModal

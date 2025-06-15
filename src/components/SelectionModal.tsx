@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,6 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   const [email, setEmail] = useState(clientEmail);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
   const { toast } = useToast();
 
@@ -143,51 +143,6 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     }
   };
 
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    
-    try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      
-      for (const photo of selectedPhotoObjects) {
-        try {
-          const photoUrl = getPhotoUrl(photo.storage_path);
-          const response = await fetch(photoUrl);
-          const blob = await response.blob();
-          const filename = photo.title || photo.filename;
-          const extension = filename.includes('.') ? '' : '.jpg';
-          zip.file(`${filename}${extension}`, blob);
-        } catch (error) {
-          console.error(`Failed to download ${photo.filename}:`, error);
-        }
-      }
-      
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `selected-photos.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Download Complete",
-        description: `Downloaded ${selectedPhotos.length} photos`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download Failed",
-        description: "Failed to download selected photos",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] bg-slate-800 border-slate-600 text-white flex flex-col">
@@ -241,9 +196,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
             selectedPhotosCount={selectedPhotos.length}
             extraPhotosCount={extraPhotosCount}
             totalCost={totalCost}
-            isDownloading={isDownloading}
             isSubmitting={isSubmitting}
-            onDownload={handleDownload}
             onSubmit={handleSubmit}
           />
         </div>

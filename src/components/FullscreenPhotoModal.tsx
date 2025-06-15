@@ -19,8 +19,6 @@ interface FullscreenPhotoModalProps {
   getPhotoUrl: (storagePath: string) => string;
   photos?: Photo[];
   onNavigate?: (direction: 'prev' | 'next') => void;
-  allowDownload?: boolean;
-  onDownload?: (photo: Photo) => void;
 }
 
 const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
@@ -29,9 +27,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
   onClose,
   getPhotoUrl,
   photos = [],
-  onNavigate,
-  allowDownload = false,
-  onDownload
+  onNavigate
 }) => {
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!isOpen || !onNavigate) return;
