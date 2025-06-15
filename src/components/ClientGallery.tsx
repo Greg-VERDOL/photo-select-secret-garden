@@ -38,7 +38,7 @@ const ClientGallery = () => {
   };
 
   const handlePhotoClick = (photo) => {
-    setFullscreenPhoto(photo);
+    setPreviewPhoto(photo);
   };
 
   const handleSelectAll = () => {
