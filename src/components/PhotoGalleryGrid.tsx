@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Heart, CheckCircle } from 'lucide-react';
@@ -95,17 +94,6 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
                     <Heart className={`w-4 h-4 md:w-5 md:h-5 ${selectedPhotos.has(photo.id) ? 'fill-current' : ''}`} />
                   </button>
                 </div>
-              </div>
-              
-              <div className="p-2 md:p-4">
-                <h3 className="font-semibold text-white text-sm md:text-base truncate">
-                  {photo.title || photo.filename}
-                </h3>
-                {photo.description && (
-                  <p className="text-xs md:text-sm text-slate-300 mt-1 line-clamp-2">
-                    {photo.description}
-                  </p>
-                )}
               </div>
             </Card>
           </motion.div>
