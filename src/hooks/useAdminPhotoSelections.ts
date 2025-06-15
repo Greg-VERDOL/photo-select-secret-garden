@@ -138,5 +138,3 @@ export const useAdminPhotoSelections = () => {
     handleManualRefresh
   };
 };
-
-export type { PhotoSelection, ClientSelections, PaymentInfo };
