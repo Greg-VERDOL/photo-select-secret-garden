@@ -1,20 +1,20 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Key, ArrowRight } from 'lucide-react';
+import { Key, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from 'react-i18next';
 
 const ClientAccessForm: React.FC = () => {
   const [accessCode, setAccessCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +46,7 @@ const ClientAccessForm: React.FC = () => {
 
       navigate(`/gallery/${accessCode.toUpperCase()}`);
     } catch (error) {
+      console.error('Error verifying access code:', error);
       toast({
         title: t('clientAccessForm.error'),
         description: t('clientAccessForm.errorDescription'),
@@ -57,32 +58,33 @@ const ClientAccessForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-sm md:max-w-md"
+        className="w-full max-w-md"
       >
-        <Card className="p-6 md:p-8 bg-white/10 border-white/20 backdrop-blur-sm">
-          <div className="text-center mb-6 md:mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-blue-600/20 rounded-full mb-4">
-              <Key className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+        <Card className="p-8 bg-white/10 border-white/20 backdrop-blur-sm">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600/20 rounded-full mb-4">
+              <Key className="w-8 h-8 text-blue-400" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white">{t('clientAccessForm.title')}</h1>
-            <p className="text-slate-300 mt-2 text-sm md:text-base">{t('clientAccessForm.subtitle')}</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('clientAccessForm.title')}</h1>
+            <p className="text-slate-300">{t('clientAccessForm.subtitle')}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="accessCode" className="block text-sm font-medium text-slate-300 mb-2">
                 {t('clientAccessForm.accessCodeLabel')}
               </label>
               <Input
+                id="accessCode"
                 type="text"
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                 placeholder={t('clientAccessForm.accessCodePlaceholder')}
-                className="bg-slate-700/50 border-slate-600 text-white text-center text-base md:text-lg tracking-widest h-12 md:h-14"
+                className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
                 maxLength={8}
                 required
               />
@@ -90,22 +92,35 @@ const ClientAccessForm: React.FC = () => {
 
             <Button
               type="submit"
-              disabled={isLoading || accessCode.length !== 8}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 h-12 md:h-14 text-base font-medium"
+              disabled={isLoading || !accessCode.trim()}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
             >
               {isLoading ? t('clientAccessForm.verifyingButton') : t('clientAccessForm.accessGalleryButton')}
-              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
 
-          <div className="mt-6 md:mt-8 text-center">
-            <p className="text-xs md:text-sm text-slate-400">
+          <div className="mt-8 text-center">
+            <p className="text-slate-400 text-sm">
               {t('clientAccessForm.noAccessCode')}{' '}
-              <span className="text-blue-400">{t('clientAccessForm.contactPhotographer')}</span>
+              <button className="text-blue-400 hover:text-blue-300 underline">
+                {t('clientAccessForm.contactPhotographer')}
+              </button>
             </p>
           </div>
         </Card>
       </motion.div>
+
+      {/* Admin link */}
+      <div className="absolute bottom-4 right-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/admin')}
+          className="text-slate-400 hover:text-white text-xs"
+        >
+          <Lock className="w-3 h-3 mr-1" />
+          Admin
+        </Button>
+      </div>
     </div>
   );
 };
