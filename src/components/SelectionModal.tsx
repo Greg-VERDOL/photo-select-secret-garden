@@ -92,6 +92,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     const paymentEmail = emailToUse || clientEmail;
     
     try {
+      console.log('Starting payment process for:', { galleryId, paymentEmail, selectedPhotos: selectedPhotos.length });
+      
       // Store pending selections in localStorage before payment
       const pendingSelections = {
         galleryId,
@@ -103,6 +105,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         }))
       };
       
+      console.log('Storing pending selections:', pendingSelections);
       localStorage.setItem('pendingSelections', JSON.stringify(pendingSelections));
       
       const { data, error } = await supabase.functions.invoke('create-payment', {
@@ -116,6 +119,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       if (error) throw error;
 
       if (data?.url) {
+        console.log('Payment URL created, redirecting to:', data.url);
         // Open payment in new tab
         window.open(data.url, '_blank');
         
@@ -130,6 +134,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         throw new Error('No payment URL received');
       }
     } catch (error) {
+      console.error('Payment error:', error);
       // Clear pending selections on error
       localStorage.removeItem('pendingSelections');
       toast({
@@ -144,6 +149,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
   const saveSelections = async () => {
     try {
+      console.log('Saving free selections:', { galleryId, clientEmail, selectedPhotos });
+      
       // Delete existing selections for this client and gallery
       await supabase
         .from('photo_selections')
@@ -159,6 +166,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           client_email: clientEmail,
         }));
 
+        console.log('Inserting selections:', selections);
         const { error } = await supabase
           .from('photo_selections')
           .insert(selections);
@@ -173,6 +181,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
 
       onClose();
     } catch (error) {
+      console.error('Error saving selections:', error);
       toast({
         title: "Error saving selections",
         description: "Failed to save your photo selections.",

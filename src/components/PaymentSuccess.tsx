@@ -28,25 +28,38 @@ const PaymentSuccess: React.FC = () => {
     try {
       const pendingData = localStorage.getItem('pendingSelections');
       if (pendingData) {
-        const { selections } = JSON.parse(pendingData);
+        const { selections, galleryId, clientEmail } = JSON.parse(pendingData);
         
-        console.log('Completing pending selections:', selections);
+        console.log('Completing pending selections:', { selections, galleryId, clientEmail });
         
-        const { error } = await supabase
+        // First, delete any existing selections for this client and gallery
+        const { error: deleteError } = await supabase
           .from('photo_selections')
-          .upsert(selections, { 
-            onConflict: 'gallery_id,photo_id',
-            ignoreDuplicates: false 
-          });
+          .delete()
+          .eq('gallery_id', galleryId)
+          .eq('client_email', clientEmail);
 
-        if (error) throw error;
+        if (deleteError) {
+          console.error('Error deleting existing selections:', deleteError);
+        }
+
+        // Insert new selections
+        if (selections && selections.length > 0) {
+          const { error: insertError } = await supabase
+            .from('photo_selections')
+            .insert(selections);
+
+          if (insertError) throw insertError;
+
+          console.log('Successfully saved selections:', selections.length);
+        }
 
         // Clear pending data
         localStorage.removeItem('pendingSelections');
 
         toast({
           title: "Selections saved!",
-          description: "Your photo selections have been completed.",
+          description: `Your ${selections.length} photo selection(s) have been completed.`,
         });
       }
     } catch (error) {
@@ -63,6 +76,8 @@ const PaymentSuccess: React.FC = () => {
 
   const verifyPaymentAndCompleteSelection = async (sessionId: string) => {
     try {
+      console.log('Verifying payment with session ID:', sessionId);
+      
       // Verify payment with Stripe
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('verify-payment', {
         body: { sessionId }
@@ -70,11 +85,16 @@ const PaymentSuccess: React.FC = () => {
 
       if (paymentError) throw paymentError;
 
+      console.log('Payment verification result:', paymentData);
       setPaymentDetails(paymentData);
 
       // Complete the photo selections if payment was successful
       if (paymentData.status === 'completed') {
+        console.log('Payment successful, completing selections...');
         await completePendingSelections();
+      } else {
+        console.log('Payment not completed, status:', paymentData.status);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -83,7 +103,6 @@ const PaymentSuccess: React.FC = () => {
         description: "Please contact us if you were charged but your selection wasn't processed.",
         variant: "destructive"
       });
-    } finally {
       setLoading(false);
     }
   };
