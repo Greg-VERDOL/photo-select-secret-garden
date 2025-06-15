@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import PhotoSelectionsHeader from './PhotoSelectionsHeader';
 import EmptySelectionsState from './EmptySelectionsState';
 import ClientSelectionCard from './ClientSelectionCard';
@@ -14,8 +15,10 @@ const PhotoSelectionsTab: React.FC = () => {
   const { groupedSelections, loading, refreshing, handleManualRefresh } = useAdminPhotoSelections();
 
   const getPhotoUrl = (storagePath: string) => {
-    // This is a simplified version - you might want to use the hook
-    return storagePath; // Replace with actual URL generation logic
+    const { data } = supabase.storage
+      .from('gallery-photos')
+      .getPublicUrl(storagePath);
+    return data.publicUrl;
   };
 
   const handlePhotoClick = (selection: PhotoSelection) => {
