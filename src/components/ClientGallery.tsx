@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGalleryData } from '@/hooks/useGalleryData';
@@ -11,13 +10,13 @@ import GalleryHeader from './GalleryHeader';
 import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoLightbox from './PhotoLightbox';
 import SelectionModal from './SelectionModal';
-import PhotoPreviewModal from './PhotoPreviewModal';
+import FullscreenPhotoModal from './FullscreenPhotoModal';
 
 const ClientGallery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showSelectionModal, setShowSelectionModal] = useState(false);
-  const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   
   const { gallery, photos, loading, getPhotoUrl } = useGalleryData();
   const { selectedPhotos, clientInfo, togglePhotoSelection, selectAllPhotos, deselectAllPhotos } = usePhotoSelections(gallery);
@@ -36,11 +35,53 @@ const ClientGallery = () => {
   };
 
   const handlePhotoClick = (photo) => {
-    setPreviewPhoto(photo);
+    setFullscreenPhoto(photo);
   };
 
   const handleSelectAll = () => {
     selectAllPhotos(photos);
+  };
+
+  const navigateFullscreen = (direction: 'prev' | 'next') => {
+    if (!fullscreenPhoto) return;
+    
+    const currentIndex = photos.findIndex(p => p.id === fullscreenPhoto.id);
+    let newIndex;
+    
+    if (direction === 'prev') {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
+    } else {
+      newIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    setFullscreenPhoto(photos[newIndex]);
+  };
+
+  const handleDownloadPhoto = async (photo) => {
+    try {
+      const photoUrl = getPhotoUrl(photo.storage_path);
+      const response = await fetch(photoUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = photo.title || photo.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Photo downloaded",
+        description: `Downloaded ${photo.title || photo.filename}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to download photo",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -94,20 +135,15 @@ const ClientGallery = () => {
         onToggleSelection={togglePhotoSelection}
       />
 
-      <PhotoPreviewModal
-        photo={previewPhoto}
-        isOpen={!!previewPhoto}
-        onClose={() => setPreviewPhoto(null)}
+      <FullscreenPhotoModal
+        photo={fullscreenPhoto}
+        isOpen={!!fullscreenPhoto}
+        onClose={() => setFullscreenPhoto(null)}
         getPhotoUrl={getPhotoUrl}
         photos={photos}
-        onNavigate={(direction) => {
-          if (!previewPhoto) return;
-          const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
-          const newIndex = direction === 'prev' 
-            ? (currentIndex - 1 + photos.length) % photos.length
-            : (currentIndex + 1) % photos.length;
-          setPreviewPhoto(photos[newIndex]);
-        }}
+        onNavigate={navigateFullscreen}
+        allowDownload={true}
+        onDownload={handleDownloadPhoto}
       />
 
       <SelectionModal

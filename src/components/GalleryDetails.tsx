@@ -181,19 +181,19 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 bg-transparent border-none">
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{gallery.name}</h2>
+          <h2 className="text-2xl font-semibold text-white mb-2">{gallery.name}</h2>
           <div className="space-y-1">
-            <p className="text-gray-600">{photos.length} photos</p>
+            <p className="text-slate-300">{photos.length} photos</p>
             {gallery.client_name && (
-              <p className="text-gray-600">Client: {gallery.client_name}</p>
+              <p className="text-slate-300">Client: {gallery.client_name}</p>
             )}
             {gallery.client_email && (
-              <p className="text-gray-600">Email: {gallery.client_email}</p>
+              <p className="text-slate-300">Email: {gallery.client_email}</p>
             )}
-            <p className="text-sm text-blue-600">Access Code: {gallery.access_code}</p>
+            <p className="text-sm text-blue-300">Access Code: {gallery.access_code}</p>
           </div>
         </div>
         
@@ -208,7 +208,7 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
           />
           <Button
             asChild
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
           >
             <label htmlFor="photo-upload" className="cursor-pointer">
               <Upload className="w-4 h-4 mr-2" />
@@ -223,10 +223,10 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
                 Delete Gallery
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-slate-800 border-slate-600 text-white">
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Gallery</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogTitle className="text-white">Delete Gallery</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-300">
                   Are you sure you want to delete the gallery "{gallery.name}" and all its photos? 
                   This action cannot be undone and will permanently delete:
                   <br />• {photos.length} photos
@@ -235,7 +235,7 @@ const GalleryDetails: React.FC<GalleryDetailsProps> = ({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={deleteGallery}
                   disabled={isDeletingGallery}

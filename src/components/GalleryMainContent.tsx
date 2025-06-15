@@ -44,7 +44,7 @@ const GalleryMainContent: React.FC<GalleryMainContentProps> = ({
   return (
     <div className="lg:col-span-2">
       {selectedGallery ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-600">
           <GalleryDetails
             gallery={selectedGallery}
             photos={photos}
@@ -55,10 +55,10 @@ const GalleryMainContent: React.FC<GalleryMainContentProps> = ({
           />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-          <FolderPlus className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Gallery</h3>
-          <p className="text-gray-500">Choose a gallery from the list to manage photos</p>
+        <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-600 p-12 text-center">
+          <FolderPlus className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-2">Select a Gallery</h3>
+          <p className="text-slate-300">Choose a gallery from the list to manage photos</p>
         </div>
       )}
     </div>
