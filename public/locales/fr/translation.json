@@ -83,7 +83,8 @@
     "selectFavorites": "Sélectionnez vos favoris",
     "selectFavoritePhotos": "Sélectionnez vos photos préférées",
     "exitButton": "Quitter",
-    "selectedCount": "{{count}} photo sélectionnée__{{count}} photos sélectionnées",
+    "selectedCount": "{{count}} photo sélectionnée",
+    "selectedCount_plural": "{{count}} photos sélectionnées",
     "sendButton": "Envoyer",
     "sendSelectionButton": "Envoyer la sélection"
   },
