@@ -100,13 +100,14 @@ export const useSecureViewing = (galleryId: string, clientEmail: string) => {
         return null;
       }
 
-      // Increment session view count
-      await supabase
-        .from('viewing_sessions')
-        .update({ 
-          current_views: supabase.raw('current_views + 1')
-        })
-        .eq('session_token', sessionToken);
+      // Increment session view count using the database function
+      const { error: updateError } = await supabase.rpc('increment_session_views', {
+        p_session_token: sessionToken
+      });
+
+      if (updateError) {
+        console.error('Error incrementing session views:', updateError);
+      }
 
       // Return the secure proxy URL
       const supabaseUrl = 'https://avmbtikrdufrrdpgrqgw.supabase.co';

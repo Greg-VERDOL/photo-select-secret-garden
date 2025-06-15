@@ -444,6 +444,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      increment_session_views: {
+        Args: { p_session_token: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
