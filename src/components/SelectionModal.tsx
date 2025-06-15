@@ -185,7 +185,8 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         <div className="space-y-6 overflow-y-auto">
           {/* Selected Photos Grid */}
           <SelectedPhotosGrid
-            selectedPhotos={selectedPhotoObjects}
+            photos={photos}
+            selectedPhotos={selectedPhotos}
             onPhotoToggle={onPhotoToggle}
             getPhotoUrl={getPhotoUrl}
           />
