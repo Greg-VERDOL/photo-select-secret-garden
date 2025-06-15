@@ -80,8 +80,8 @@ const ClientGallery = () => {
                            selectionData.accessCode === gallery.access_code &&
                            (Date.now() - selectionData.timestamp) < 24 * 60 * 60 * 1000;
         
-        if (isValidData && selectionData.selectedPhotos) {
-          const savedSelections = new Set(selectionData.selectedPhotos);
+        if (isValidData && selectionData.selectedPhotos && Array.isArray(selectionData.selectedPhotos)) {
+          const savedSelections = new Set<string>(selectionData.selectedPhotos);
           setSelectedPhotos(savedSelections);
           
           if (savedSelections.size > 0) {

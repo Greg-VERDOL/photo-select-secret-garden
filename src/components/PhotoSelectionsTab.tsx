@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -159,6 +158,10 @@ const PhotoSelectionsTab: React.FC = () => {
     });
   };
 
+  const handlePhotoClick = (selection: PhotoSelection) => {
+    setSelectedPhoto(selection);
+  };
+
   const groupSelectionsByClient = async () => {
     const grouped = selections.reduce((acc, selection) => {
       const key = `${selection.gallery.client_name}-${selection.client_email}-${selection.gallery.id}`;
@@ -275,7 +278,7 @@ const PhotoSelectionsTab: React.FC = () => {
               key={index}
               clientGroup={clientGroup}
               getPhotoUrl={getPhotoUrl}
-              onPhotoClick={setSelectedPhoto}
+              onPhotoClick={handlePhotoClick}
               onDownloadAll={downloadClientSelections}
               downloadingClient={downloadingClient}
             />
