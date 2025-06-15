@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, User, Mail, Calendar, Eye } from 'lucide-react';
+import { CreditCard, User, Mail, Calendar, Eye, Download } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import PhotoThumbnail from './PhotoThumbnail';
 import { ClientSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
+import { usePhotoDownload } from '@/hooks/usePhotoDownload';
 
 interface ClientSelectionCardProps {
   clientGroup: ClientSelections;
@@ -18,6 +20,13 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
   getPhotoUrl,
   onPhotoClick
 }) => {
+  const { downloadingClient, downloadClientSelections } = usePhotoDownload();
+  const isDownloading = downloadingClient === clientGroup.clientName;
+
+  const handleDownload = (unwatermarked: boolean = false) => {
+    downloadClientSelections(clientGroup, unwatermarked);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -55,6 +64,29 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Download Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => handleDownload(false)}
+                disabled={isDownloading}
+                variant="outline"
+                size="sm"
+                className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Downloading...' : 'Download Watermarked'}
+              </Button>
+              <Button
+                onClick={() => handleDownload(true)}
+                disabled={isDownloading}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? 'Downloading...' : 'Download Original'}
+              </Button>
             </div>
           </div>
 
