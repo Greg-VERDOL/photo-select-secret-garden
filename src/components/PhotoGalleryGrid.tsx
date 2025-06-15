@@ -69,12 +69,16 @@ const PhotoGalleryGrid: React.FC<PhotoGalleryGridProps> = ({
           >
             <Card className="overflow-hidden bg-white/5 border-white/10 hover:border-blue-400/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10">
               <div className="relative aspect-square overflow-hidden">
-                <WatermarkedImage
-                  src={(photo as any).thumbnail}
-                  alt={photo.title || photo.filename}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+                <div 
+                  className="w-full h-full cursor-pointer"
                   onClick={() => onPhotoClick(photo)}
-                />
+                >
+                  <WatermarkedImage
+                    src={(photo as any).thumbnail}
+                    alt={photo.title || photo.filename}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
                 
                 {/* Selection overlay - Always visible on mobile, hover on desktop */}
                 <div className="absolute inset-0 bg-black/0 md:group-hover:bg-black/20 transition-all duration-300">
