@@ -150,21 +150,21 @@ export type Database = {
       }
       photo_selections: {
         Row: {
-          client_email: string | null
+          client_email: string
           gallery_id: string
           id: string
           photo_id: string
           selected_at: string
         }
         Insert: {
-          client_email?: string | null
+          client_email: string
           gallery_id: string
           id?: string
           photo_id: string
           selected_at?: string
         }
         Update: {
-          client_email?: string | null
+          client_email?: string
           gallery_id?: string
           id?: string
           photo_id?: string

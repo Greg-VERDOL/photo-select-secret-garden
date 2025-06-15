@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
@@ -27,28 +26,52 @@ const PaymentSuccess: React.FC = () => {
     }
   }, [searchParams]);
 
-  const savePendingSelections = async (pendingData: any) => {
-    const { galleryId, clientEmail, selectedPhotos } = pendingData;
+  const savePendingSelections = async (pendingData: any, fallbackClientEmail?: string) => {
+    const { galleryId, clientEmail: originalClientEmail, selectedPhotos } = pendingData;
     
-    console.log('Saving pending selections after payment:', { galleryId, clientEmail, selectedPhotos: selectedPhotos?.length });
+    // Use fallback email if original is invalid
+    const clientEmail = originalClientEmail && originalClientEmail.trim() !== '' 
+      ? originalClientEmail 
+      : fallbackClientEmail;
+    
+    console.log('Saving pending selections after payment:', { 
+      galleryId, 
+      originalClientEmail, 
+      fallbackClientEmail,
+      finalClientEmail: clientEmail,
+      selectedPhotos: selectedPhotos?.length 
+    });
     
     if (!clientEmail || !galleryId || !selectedPhotos || selectedPhotos.length === 0) {
-      console.error('Invalid pending selection data:', { clientEmail, galleryId, selectedPhotosLength: selectedPhotos?.length });
-      return false;
+      console.error('Invalid pending selection data:', { 
+        clientEmail, 
+        galleryId, 
+        selectedPhotosLength: selectedPhotos?.length 
+      });
+      return { success: false, error: 'Missing required data for saving selections' };
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clientEmail.trim())) {
+      console.error('Invalid email format:', clientEmail);
+      return { success: false, error: 'Invalid email format' };
     }
 
     try {
+      const trimmedEmail = clientEmail.trim();
+      
       // Delete existing selections for this client and gallery to avoid duplicates
-      console.log('Deleting existing selections for client:', clientEmail);
+      console.log('Deleting existing selections for client:', trimmedEmail);
       const { error: deleteError } = await supabase
         .from('photo_selections')
         .delete()
         .eq('gallery_id', galleryId)
-        .eq('client_email', clientEmail.trim());
+        .eq('client_email', trimmedEmail);
 
       if (deleteError) {
         console.error('Error deleting existing selections:', deleteError);
-        // Continue anyway, as this might just mean no existing selections
+        return { success: false, error: `Failed to clear existing selections: ${deleteError.message}` };
       } else {
         console.log('Successfully deleted existing selections');
       }
@@ -57,7 +80,7 @@ const PaymentSuccess: React.FC = () => {
       const selections = selectedPhotos.map(photoId => ({
         gallery_id: galleryId,
         photo_id: photoId,
-        client_email: clientEmail.trim(),
+        client_email: trimmedEmail,
       }));
 
       console.log('Inserting new selections after payment:', selections);
@@ -67,7 +90,7 @@ const PaymentSuccess: React.FC = () => {
 
       if (insertError) {
         console.error('Error inserting selections after payment:', insertError);
-        throw insertError;
+        return { success: false, error: `Failed to save selections: ${insertError.message}` };
       }
 
       console.log('Successfully saved selections after payment:', selections.length, insertData);
@@ -76,19 +99,20 @@ const PaymentSuccess: React.FC = () => {
       // Store completion confirmation
       const completedSelections = {
         ...pendingData,
+        clientEmail: trimmedEmail,
         completed: true,
         completedAt: Date.now()
       };
       localStorage.setItem('completedSelections', JSON.stringify(completedSelections));
       
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Error saving selections after payment:', error);
-      return false;
+      return { success: false, error: `Unexpected error: ${error.message}` };
     }
   };
 
-  const completePendingSelections = async () => {
+  const completePendingSelections = async (fallbackClientEmail?: string) => {
     try {
       const pendingData = localStorage.getItem('pendingSelections');
       console.log('Checking for pending selections:', pendingData);
@@ -107,9 +131,9 @@ const PaymentSuccess: React.FC = () => {
         }
         
         console.log('Processing pending selections:', parsed);
-        const success = await savePendingSelections(parsed);
+        const result = await savePendingSelections(parsed, fallbackClientEmail);
         
-        if (success) {
+        if (result.success) {
           // Clear pending data only after successful save
           localStorage.removeItem('pendingSelections');
           
@@ -118,9 +142,10 @@ const PaymentSuccess: React.FC = () => {
             description: `Your ${parsed.selectedPhotos.length} photo selection(s) have been completed.`,
           });
         } else {
+          console.error('Failed to save selections:', result.error);
           toast({
             title: "Payment successful, but...",
-            description: "There was an issue saving your selections. Please contact us.",
+            description: `There was an issue saving your selections: ${result.error}. Please contact us.`,
             variant: "destructive"
           });
         }
@@ -159,7 +184,12 @@ const PaymentSuccess: React.FC = () => {
       // Complete the photo selections if payment was successful
       if (paymentData.status === 'completed' || paymentData.payment_status === 'paid') {
         console.log('Payment successful, completing selections...');
-        await completePendingSelections();
+        
+        // Extract client email from payment metadata as fallback
+        const fallbackEmail = paymentData.metadata?.client_email;
+        console.log('Using fallback email from payment metadata:', fallbackEmail);
+        
+        await completePendingSelections(fallbackEmail);
       } else {
         console.log('Payment not completed, status:', paymentData.status, paymentData.payment_status);
         toast({
