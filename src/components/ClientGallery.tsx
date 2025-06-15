@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -10,13 +9,12 @@ import { useClientGalleryState } from '@/hooks/useClientGalleryState';
 import { usePhotoNavigation } from '@/hooks/usePhotoNavigation';
 import { useClientGalleryActions } from '@/hooks/useClientGalleryActions';
 import GalleryHeader from './GalleryHeader';
-import SecurePhotoGrid from './SecurePhotoGrid';
+import PhotoGalleryGrid from './PhotoGalleryGrid';
 import PhotoLightbox from './PhotoLightbox';
 import PhotoPreviewModal from './PhotoPreviewModal';
 import SelectionModal from './SelectionModal';
 import FullscreenPhotoModal from './FullscreenPhotoModal';
 import { useTranslation } from 'react-i18next';
-import { useSecureViewing } from '@/hooks/useSecureViewing';
 
 const ClientGallery = () => {
   const navigate = useNavigate();
@@ -42,8 +40,6 @@ const ClientGallery = () => {
     return email;
   }, [clientInfo.email, gallery?.client_email]);
 
-  const { isSessionValid, isSessionLoading, generateSecureImageUrl, logDownloadAttempt } = useSecureViewing(gallery?.id || '', clientEmail);
-
   const { navigateFullscreen, navigatePreview } = usePhotoNavigation(photos);
   const { handleSendSelection, handleSelectAll } = useClientGalleryActions(
     selectedPhotos,
@@ -51,10 +47,6 @@ const ClientGallery = () => {
     selectAllPhotos,
     setShowSelectionModal
   );
-
-  const photosForGrid = useMemo(() => {
-    return photos.map(photo => ({ ...photo, title: undefined, filename: '' }));
-  }, [photos]);
 
   const handlePhotoClick = (photo: any) => {
     setPreviewPhoto(photo);
@@ -68,16 +60,16 @@ const ClientGallery = () => {
     navigatePreview(direction, previewPhoto, setPreviewPhoto);
   };
 
-  if (loading || isSessionLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
           <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <div className="text-xl mb-2">
-            {loading ? t('clientGallery.loading') : 'Setting up secure session...'}
+            {t('clientGallery.loading')}
           </div>
           <div className="text-sm text-slate-300">
-            {loading ? 'Loading gallery data...' : 'Initializing encrypted viewing session for photo protection'}
+            {'Loading gallery data...'}
           </div>
         </div>
       </div>
@@ -107,18 +99,13 @@ const ClientGallery = () => {
       />
 
       <div className="max-w-7xl mx-auto p-3 md:p-6">
-        <SecurePhotoGrid
-          photos={photosForGrid}
+        <PhotoGalleryGrid
+          photos={photos}
           selectedPhotos={selectedPhotos}
-          galleryId={gallery.id}
-          clientEmail={clientEmail}
           onPhotoClick={handlePhotoClick}
           onToggleSelection={togglePhotoSelection}
           onSelectAll={handleSelectAll}
           onDeselectAll={deselectAllPhotos}
-          isSessionValid={isSessionValid}
-          generateSecureImageUrl={generateSecureImageUrl}
-          logDownloadAttempt={logDownloadAttempt}
         />
       </div>
 
