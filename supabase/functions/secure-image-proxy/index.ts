@@ -22,7 +22,10 @@ const handler = async (req: Request): Promise<Response> => {
     const token = url.searchParams.get('token');
     const photoId = url.searchParams.get('photo_id');
     
+    console.log('🔐 Secure image proxy request:', { token: token?.substring(0, 20) + '...', photoId });
+    
     if (!token || !photoId) {
+      console.error('❌ Missing token or photo_id:', { token: !!token, photoId: !!photoId });
       return new Response('Missing token or photo_id', { 
         status: 400, 
         headers: corsHeaders 
@@ -30,6 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Verify the access token
+    console.log('🔍 Verifying access token...');
     const { data: accessLog, error: tokenError } = await supabase
       .from('image_access_logs')
       .select('*, photos(storage_path)')
@@ -38,7 +42,8 @@ const handler = async (req: Request): Promise<Response> => {
       .gte('expires_at', new Date().toISOString())
       .single();
 
-    if (tokenError || !accessLog) {
+    if (tokenError) {
+      console.error('❌ Token verification error:', tokenError);
       // Log suspicious activity
       await supabase.from('download_attempts').insert({
         photo_id: photoId,
@@ -55,17 +60,38 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    if (!accessLog) {
+      console.error('❌ No access log found for token');
+      return new Response('Invalid or expired token', { 
+        status: 403, 
+        headers: corsHeaders 
+      });
+    }
+
+    console.log('✅ Token verified, accessing photo:', accessLog.photos?.storage_path);
+
     // Get the image from storage
     const { data: imageData, error: storageError } = await supabase.storage
       .from('gallery-photos')
       .download(accessLog.photos.storage_path);
 
-    if (storageError || !imageData) {
+    if (storageError) {
+      console.error('❌ Storage error:', storageError);
       return new Response('Image not found', { 
         status: 404, 
         headers: corsHeaders 
       });
     }
+
+    if (!imageData) {
+      console.error('❌ No image data returned');
+      return new Response('Image not found', { 
+        status: 404, 
+        headers: corsHeaders 
+      });
+    }
+
+    console.log('✅ Image retrieved successfully, size:', imageData.size);
 
     // Add watermark headers and security headers
     const headers = new Headers({
@@ -82,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(imageData, { headers });
 
   } catch (error: any) {
-    console.error('Error in secure image proxy:', error);
+    console.error('❌ Error in secure image proxy:', error);
     return new Response('Internal server error', { 
       status: 500, 
       headers: corsHeaders 
