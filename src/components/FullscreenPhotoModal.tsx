@@ -1,4 +1,3 @@
-
 import React, { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -20,6 +19,7 @@ interface FullscreenPhotoModalProps {
   getPhotoUrl: (storagePath: string) => string;
   photos?: Photo[];
   onNavigate?: (direction: 'prev' | 'next') => void;
+  isAdminView?: boolean;
 }
 
 const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
@@ -28,7 +28,8 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
   onClose,
   getPhotoUrl,
   photos = [],
-  onNavigate
+  onNavigate,
+  isAdminView = false,
 }) => {
   const { t } = useTranslation();
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
@@ -115,6 +116,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
               src={getPhotoUrl(photo.storage_path)}
               alt={photo.title || photo.filename}
               className="block"
+              isAdminView={isAdminView}
             />
           </div>
         </div>
