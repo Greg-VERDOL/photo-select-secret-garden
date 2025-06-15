@@ -133,21 +133,41 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Save photo selections
-      const selections = selectedPhotos.map(photoId => ({
-        photo_id: photoId,
-        gallery_id: galleryId,
-        client_email: email.trim()
-      }));
+      // Use a transaction to ensure data consistency
+      const { error: transactionError } = await supabase.rpc('handle_photo_selections', {
+        p_gallery_id: galleryId,
+        p_client_email: email.trim(),
+        p_photo_ids: selectedPhotos
+      });
 
-      const { error: selectionsError } = await supabase
-        .from('photo_selections')
-        .upsert(selections, { 
-          onConflict: 'photo_id,gallery_id,client_email',
-          ignoreDuplicates: false 
-        });
+      if (transactionError) {
+        // Fallback to manual transaction if the RPC doesn't exist
+        console.log('RPC not found, using manual transaction');
+        
+        // First, delete all existing selections for this client and gallery
+        const { error: deleteError } = await supabase
+          .from('photo_selections')
+          .delete()
+          .eq('gallery_id', galleryId)
+          .eq('client_email', email.trim());
 
-      if (selectionsError) throw selectionsError;
+        if (deleteError) throw deleteError;
+
+        // Then, insert new selections if any photos are selected
+        if (selectedPhotos.length > 0) {
+          const selections = selectedPhotos.map(photoId => ({
+            photo_id: photoId,
+            gallery_id: galleryId,
+            client_email: email.trim()
+          }));
+
+          const { error: insertError } = await supabase
+            .from('photo_selections')
+            .insert(selections);
+
+          if (insertError) throw insertError;
+        }
+      }
 
       // Send admin notification (don't await to avoid blocking)
       sendAdminNotification();
