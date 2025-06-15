@@ -125,7 +125,7 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
           <WatermarkedImage
             src={getPhotoUrl(photo.storage_path)}
             alt={photo.title || photo.filename}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full"
           />
         </div>
       </DialogContent>

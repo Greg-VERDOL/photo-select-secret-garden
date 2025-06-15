@@ -1,4 +1,6 @@
+
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface WatermarkedImageProps {
   src: string;
@@ -9,11 +11,11 @@ interface WatermarkedImageProps {
 
 const WatermarkedImage: React.FC<WatermarkedImageProps> = ({ src, alt, className, onClick }) => {
   return (
-    <div className="relative inline-block" onClick={onClick}>
+    <div className={cn("relative", className)} onClick={onClick}>
       <img 
         src={src} 
         alt={alt} 
-        className={className}
+        className="w-full h-full object-contain"
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
         style={{ userSelect: 'none' }}
