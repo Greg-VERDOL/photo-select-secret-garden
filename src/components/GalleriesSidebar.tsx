@@ -3,6 +3,7 @@ import React from 'react';
 import { FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface Gallery {
   id: string;
@@ -26,22 +27,23 @@ const GalleriesSidebar: React.FC<GalleriesSidebarProps> = ({
   onSelectGallery
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return (
     <div className="lg:col-span-1">
       <div className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-600 overflow-hidden">
         <div className="p-6 border-b border-slate-600">
           <h2 className="text-lg font-semibold text-white">
-            Your Galleries
-            <span className="ml-2 text-sm font-normal text-slate-300">({galleries.length})</span>
+            {t('galleriesSidebar.title')}
+            <span className="ml-2 text-sm font-normal text-slate-300">{t('galleriesSidebar.count', { count: galleries.length })}</span>
           </h2>
         </div>
         <div className="max-h-96 overflow-y-auto">
           {galleries.length === 0 ? (
             <div className="p-8 text-center">
               <FolderPlus className="w-12 h-12 mx-auto text-slate-400 mb-3" />
-              <p className="text-slate-300">No galleries yet</p>
-              <p className="text-sm text-slate-400 mt-1">Create your first gallery to get started</p>
+              <p className="text-slate-300">{t('galleriesSidebar.noGalleries')}</p>
+              <p className="text-sm text-slate-400 mt-1">{t('galleriesSidebar.noGalleriesDescription')}</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-600">
@@ -57,7 +59,7 @@ const GalleriesSidebar: React.FC<GalleriesSidebarProps> = ({
                 >
                   <h3 className="font-medium text-white mb-1">{gallery.name}</h3>
                   <p className="text-sm text-slate-300">
-                    {gallery.photo_count || 0} photos • {new Date(gallery.created_at).toLocaleDateString()}
+                    {t('galleriesSidebar.photoCount', { count: gallery.photo_count || 0 })} • {new Date(gallery.created_at).toLocaleDateString()}
                   </p>
                   {gallery.client_name && (
                     <p className="text-sm text-blue-300 mt-1">{gallery.client_name}</p>
@@ -74,12 +76,12 @@ const GalleriesSidebar: React.FC<GalleriesSidebarProps> = ({
                         e.stopPropagation();
                         navigator.clipboard.writeText(gallery.access_code);
                         toast({
-                          title: "Copied!",
-                          description: "Access code copied to clipboard",
+                          title: t('galleriesSidebar.copied'),
+                          description: t('galleriesSidebar.copiedDescription'),
                         });
                       }}
                     >
-                      Copy
+                      {t('galleriesSidebar.copyButton')}
                     </Button>
                   </div>
                 </div>

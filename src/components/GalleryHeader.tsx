@@ -5,6 +5,7 @@ import { Heart, Mail, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Gallery } from '@/hooks/useGalleryData';
+import { useTranslation } from 'react-i18next';
 
 interface GalleryHeaderProps {
   gallery: Gallery;
@@ -18,6 +19,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
   onSendSelection
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <motion.header 
@@ -34,7 +36,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
                 {gallery.name}
               </h1>
               <p className="text-sm text-slate-300 mt-1 truncate">
-                {gallery.client_name ? `Welcome ${gallery.client_name}!` : 'Select your favorites'}
+                {gallery.client_name ? t('galleryHeader.welcome', { clientName: gallery.client_name }) : t('galleryHeader.selectFavorites')}
               </p>
             </div>
             <Button 
@@ -55,7 +57,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
                 className="flex items-center gap-2 bg-blue-600/20 px-3 py-2 rounded-full border border-blue-400/30"
               >
                 <Heart className="w-4 h-4 text-red-400" />
-                <span className="text-sm">{selectedPhotosCount} selected</span>
+                <span className="text-sm">{t('galleryHeader.selectedCount', { count: selectedPhotosCount })}</span>
               </motion.div>
             )}
             
@@ -66,7 +68,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
               disabled={selectedPhotosCount === 0}
             >
               <Mail className="w-4 h-4 mr-2" />
-              Send
+              {t('galleryHeader.sendButton')}
             </Button>
           </div>
         </div>
@@ -78,8 +80,8 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
               {gallery.name}
             </h1>
             <p className="text-slate-300 mt-1">
-              {gallery.client_name ? `Welcome ${gallery.client_name}! ` : ''}
-              Select your favorite photos
+              {gallery.client_name ? t('galleryHeader.welcome', { clientName: gallery.client_name }) : ''}
+              {t('galleryHeader.selectFavoritePhotos')}
             </p>
           </div>
           
@@ -90,7 +92,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
               className="border-slate-600 text-slate-300 hover:bg-slate-700"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Exit
+              {t('galleryHeader.exitButton')}
             </Button>
             
             {selectedPhotosCount > 0 && (
@@ -100,7 +102,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
                 className="flex items-center gap-2 bg-blue-600/20 px-4 py-2 rounded-full border border-blue-400/30"
               >
                 <Heart className="w-4 h-4 text-red-400" />
-                <span>{selectedPhotosCount} selected</span>
+                <span>{t('galleryHeader.selectedCount', { count: selectedPhotosCount })}</span>
               </motion.div>
             )}
             
@@ -110,7 +112,7 @@ const GalleryHeader: React.FC<GalleryHeaderProps> = ({
               disabled={selectedPhotosCount === 0}
             >
               <Mail className="w-4 h-4 mr-2" />
-              Send Selection
+              {t('galleryHeader.sendSelectionButton')}
             </Button>
           </div>
         </div>

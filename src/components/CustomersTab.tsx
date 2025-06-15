@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, User, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Customer {
   id: string;
@@ -17,6 +18,7 @@ const CustomersTab: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchCustomers();
@@ -53,8 +55,8 @@ const CustomersTab: React.FC = () => {
       setCustomers(Array.from(customerMap.values()));
     } catch (error) {
       toast({
-        title: "Error fetching customers",
-        description: "Failed to load customer data",
+        title: t('customersTab.errorFetching'),
+        description: t('customersTab.errorFetchingDescription'),
         variant: "destructive"
       });
     } finally {
@@ -65,7 +67,7 @@ const CustomersTab: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-white">Loading customers...</div>
+        <div className="text-white">{t('customersTab.loading')}</div>
       </div>
     );
   }
@@ -73,8 +75,8 @@ const CustomersTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Customer Management</h2>
-        <p className="text-slate-400">View and manage your clients</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{t('customersTab.title')}</h2>
+        <p className="text-slate-400">{t('customersTab.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -87,7 +89,7 @@ const CustomersTab: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">{customer.client_name}</h3>
-                  <p className="text-sm text-slate-400">{customer.gallery_count} galleries</p>
+                  <p className="text-sm text-slate-400">{t('customersTab.galleryCount', { count: customer.gallery_count })}</p>
                 </div>
               </div>
               
@@ -98,7 +100,7 @@ const CustomersTab: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-slate-300">
                   <Calendar className="w-4 h-4" />
-                  <span>Client since {new Date(customer.created_at).toLocaleDateString()}</span>
+                  <span>{t('customersTab.clientSince', { date: new Date(customer.created_at).toLocaleDateString() })}</span>
                 </div>
               </div>
             </div>
@@ -109,8 +111,8 @@ const CustomersTab: React.FC = () => {
       {customers.length === 0 && (
         <Card className="p-12 bg-white/5 border-white/10 text-center">
           <User className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-          <h3 className="text-xl font-semibold mb-2 text-white">No Customers Yet</h3>
-          <p className="text-slate-400">Create galleries with client information to see customers here</p>
+          <h3 className="text-xl font-semibold mb-2 text-white">{t('customersTab.noCustomers')}</h3>
+          <p className="text-slate-400">{t('customersTab.noCustomersDescription')}</p>
         </Card>
       )}
     </div>

@@ -25,5 +25,145 @@
     "title": "Galeries",
     "subtitle": "Gérez vos collections de photos",
     "newGalleryButton": "Nouvelle Galerie"
+  },
+  "languageSwitcher": {
+    "changeLanguage": "Changer de langue",
+    "english": "English",
+    "french": "Français"
+  },
+  "createGalleryModal": {
+    "title": "Créer une nouvelle galerie"
+  },
+  "clientAccessForm": {
+    "title": "Accédez à votre galerie",
+    "subtitle": "Entrez votre code d'accès pour voir vos photos",
+    "accessCodeLabel": "Code d'accès",
+    "accessCodePlaceholder": "Entrez votre code à 8 caractères",
+    "verifyingButton": "Vérification...",
+    "accessGalleryButton": "Accéder à la galerie",
+    "noAccessCode": "Vous n'avez pas de code d'accès ?",
+    "contactPhotographer": "Contactez votre photographe",
+    "invalidAccessCode": "Code d'accès invalide",
+    "invalidAccessCodeDescription": "Veuillez vérifier votre code d'accès et réessayer.",
+    "accessGranted": "Accès autorisé !",
+    "accessGrantedDescription": "Bienvenue dans la galerie {{galleryName}}.",
+    "error": "Erreur",
+    "errorDescription": "Une erreur est survenue. Veuillez réessayer."
+  },
+  "adminLogin": {
+    "title": "Connexion administrateur",
+    "subtitle": "Accédez à votre tableau de bord de galerie photo",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Entrez votre email",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Entrez le mot de passe",
+    "signInButton": "Se connecter",
+    "signingInButton": "Connexion en cours...",
+    "loginFailed": "La connexion a échoué",
+    "welcomeBack": "Bon retour !",
+    "loginSuccess": "Connecté avec succès au tableau de bord administrateur.",
+    "unexpectedError": "Une erreur inattendue est survenue."
+  },
+  "adminDashboard": {
+    "title": "Admin Galerie",
+    "subtitle": "Gérez vos galeries de photos et les sélections des clients",
+    "signOutButton": "Se déconnecter",
+    "galleriesTab": "Galeries",
+    "selectionsTab": "Sélections de photos",
+    "settingsTab": "Paramètres"
+  },
+  "clientGallery": {
+    "noPhotosSelected": "Aucune photo sélectionnée",
+    "noPhotosSelectedDescription": "Veuillez sélectionner au moins une photo avant d'envoyer.",
+    "loading": "Chargement de la galerie...",
+    "notFound": "Galerie non trouvée",
+    "backButton": "Retour au formulaire d'accès"
+  },
+  "galleryHeader": {
+    "welcome": "Bienvenue {{clientName}} !",
+    "selectFavorites": "Sélectionnez vos favoris",
+    "selectFavoritePhotos": "Sélectionnez vos photos préférées",
+    "exitButton": "Quitter",
+    "selectedCount": "{{count}} photo sélectionnée__{{count}} photos sélectionnées",
+    "sendButton": "Envoyer",
+    "sendSelectionButton": "Envoyer la sélection"
+  },
+  "galleriesSidebar": {
+    "title": "Vos galeries",
+    "count": "({{count}})",
+    "noGalleries": "Aucune galerie pour l'instant",
+    "noGalleriesDescription": "Créez votre première galerie pour commencer",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "copyButton": "Copier",
+    "copied": "Copié !",
+    "copiedDescription": "Code d'accès copié dans le presse-papiers"
+  },
+  "galleryList": {
+    "title": "Vos galeries ({{count}})",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer la galerie \"{{galleryName}}\" et toutes ses photos ? Cette action est irréversible.",
+    "galleryDeleted": "Galerie supprimée",
+    "galleryDeletedDescription": "La galerie \"{{galleryName}}\" et toutes ses photos ont été supprimées.",
+    "deleteFailed": "La suppression a échoué",
+    "deleteFailedDescription": "Échec de la suppression de la galerie",
+    "accessCodeCopied": "Code d'accès copié",
+    "accessCodeCopiedDescription": "Le code d'accès a été copié dans le presse-papiers."
+  },
+  "customersTab": {
+    "title": "Gestion des clients",
+    "subtitle": "Voir et gérer vos clients",
+    "loading": "Chargement des clients...",
+    "galleryCount_one": "{{count}} galerie",
+    "galleryCount_other": "{{count}} galeries",
+    "clientSince": "Client depuis le {{date}}",
+    "noCustomers": "Aucun client pour l'instant",
+    "noCustomersDescription": "Créez des galeries avec les informations du client pour voir les clients ici"
+  },
+  "emailFormModal": {
+    "emailForPaymentTitle": "Email requis pour le paiement",
+    "emailRequiredTitle": "Email requis",
+    "paymentDescription_one": "Nous avons besoin de votre adresse e-mail pour traiter le paiement de {{extraPhotosCount}} photo supplémentaire (€{{totalCost}}).",
+    "paymentDescription_other": "Nous avons besoin de votre adresse e-mail pour traiter le paiement de {{extraPhotosCount}} photos supplémentaires (€{{totalCost}}).",
+    "selectionDescription": "Nous avons besoin de votre adresse e-mail pour enregistrer votre sélection de photos.",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "votre.email@exemple.com",
+    "backButton": "Retour",
+    "processingButton": "Traitement...",
+    "continueToPaymentButton": "Continuer vers le paiement",
+    "saveSelectionButton": "Enregistrer la sélection",
+    "emailRequired": "Email requis",
+    "emailRequiredDescription": "Veuillez saisir votre adresse e-mail pour continuer.",
+    "invalidEmail": "Email invalide",
+    "invalidEmailDescription": "Veuillez saisir une adresse e-mail valide.",
+    "error": "Erreur",
+    "errorDescription": "Échec du traitement de votre demande. Veuillez réessayer."
+  },
+  "clientSelectionCard": {
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "lastSelected": "Dernière sélection : {{date}}",
+    "gallery": "Galerie : {{galleryName}}",
+    "downloadButton": "Télécharger les photos",
+    "downloadingButton": "Téléchargement...",
+    "paymentInfo": "Informations de paiement",
+    "extraPhotos": "Photos supplémentaires : {{count}}",
+    "amountPaid": "Montant payé : €{{amount}}"
+  },
+  "adminSidebar": {
+    "dashboard": "Tableau de bord",
+    "galleries": "Galeries",
+    "photoSelections": "Sélections de photos"
+  },
+  "clientInfoForm": {
+    "title": "Vos informations",
+    "emailLabel": "Adresse e-mail *",
+    "emailPlaceholder": "votre.email@exemple.com",
+    "messageLabel": "Message (optionnel)",
+    "messagePlaceholder": "Demandes spéciales ou notes..."
+  },
+  "indexPage": {
+    "loading": "Chargement..."
   }
 }

@@ -11,7 +11,7 @@ import {
 import { Globe } from 'lucide-react';
 
 const LanguageSwitcher: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -22,15 +22,15 @@ const LanguageSwitcher: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" className="bg-slate-800/30 border-slate-600 hover:bg-slate-700/50 text-white">
           <Globe className="h-[1.2rem] w-[1.2rem]" />
-          <span className="sr-only">Change language</span>
+          <span className="sr-only">{t('languageSwitcher.changeLanguage')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => changeLanguage('en')}>
-          English
+          {t('languageSwitcher.english')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => changeLanguage('fr')}>
-          Français
+          {t('languageSwitcher.french')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

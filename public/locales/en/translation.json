@@ -25,5 +25,145 @@
     "title": "Galleries",
     "subtitle": "Manage your photo collections",
     "newGalleryButton": "New Gallery"
+  },
+  "languageSwitcher": {
+    "changeLanguage": "Change language",
+    "english": "English",
+    "french": "Français"
+  },
+  "createGalleryModal": {
+    "title": "Create New Gallery"
+  },
+  "clientAccessForm": {
+    "title": "Access Your Gallery",
+    "subtitle": "Enter your access code to view your photos",
+    "accessCodeLabel": "Access Code",
+    "accessCodePlaceholder": "Enter your 8-character code",
+    "verifyingButton": "Verifying...",
+    "accessGalleryButton": "Access Gallery",
+    "noAccessCode": "Don't have an access code?",
+    "contactPhotographer": "Contact your photographer",
+    "invalidAccessCode": "Invalid access code",
+    "invalidAccessCodeDescription": "Please check your access code and try again.",
+    "accessGranted": "Access granted!",
+    "accessGrantedDescription": "Welcome to {{galleryName}} gallery.",
+    "error": "Error",
+    "errorDescription": "Something went wrong. Please try again."
+  },
+  "adminLogin": {
+    "title": "Admin Login",
+    "subtitle": "Access your photo gallery dashboard",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password",
+    "signInButton": "Sign In",
+    "signingInButton": "Signing in...",
+    "loginFailed": "Login failed",
+    "welcomeBack": "Welcome back!",
+    "loginSuccess": "Successfully logged in to admin dashboard.",
+    "unexpectedError": "An unexpected error occurred."
+  },
+  "adminDashboard": {
+    "title": "Gallery Admin",
+    "subtitle": "Manage your photo galleries and client selections",
+    "signOutButton": "Sign Out",
+    "galleriesTab": "Galleries",
+    "selectionsTab": "Photo Selections",
+    "settingsTab": "Settings"
+  },
+  "clientGallery": {
+    "noPhotosSelected": "No photos selected",
+    "noPhotosSelectedDescription": "Please select at least one photo before sending.",
+    "loading": "Loading gallery...",
+    "notFound": "Gallery Not Found",
+    "backButton": "Back to Access Form"
+  },
+  "galleryHeader": {
+    "welcome": "Welcome {{clientName}}!",
+    "selectFavorites": "Select your favorites",
+    "selectFavoritePhotos": "Select your favorite photos",
+    "exitButton": "Exit",
+    "selectedCount": "{{count}} selected",
+    "sendButton": "Send",
+    "sendSelectionButton": "Send Selection"
+  },
+  "galleriesSidebar": {
+    "title": "Your Galleries",
+    "count": "({{count}})",
+    "noGalleries": "No galleries yet",
+    "noGalleriesDescription": "Create your first gallery to get started",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "copyButton": "Copy",
+    "copied": "Copied!",
+    "copiedDescription": "Access code copied to clipboard"
+  },
+  "galleryList": {
+    "title": "Your Galleries ({{count}})",
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "deleteConfirmation": "Are you sure you want to delete the gallery \"{{galleryName}}\" and all its photos? This action cannot be undone.",
+    "galleryDeleted": "Gallery deleted",
+    "galleryDeletedDescription": "Gallery \"{{galleryName}}\" and all its photos have been deleted.",
+    "deleteFailed": "Delete failed",
+    "deleteFailedDescription": "Failed to delete gallery",
+    "accessCodeCopied": "Access code copied",
+    "accessCodeCopiedDescription": "Access code copied to clipboard."
+  },
+  "customersTab": {
+    "title": "Customer Management",
+    "subtitle": "View and manage your clients",
+    "loading": "Loading customers...",
+    "galleryCount_one": "{{count}} gallery",
+    "galleryCount_other": "{{count}} galleries",
+    "clientSince": "Client since {{date}}",
+    "noCustomers": "No Customers Yet",
+    "noCustomersDescription": "Create galleries with client information to see customers here"
+  },
+  "emailFormModal": {
+    "emailForPaymentTitle": "Email Required for Payment",
+    "emailRequiredTitle": "Email Required",
+    "paymentDescription_one": "We need your email address to process the payment for {{extraPhotosCount}} extra photo (€{{totalCost}}).",
+    "paymentDescription_other": "We need your email address to process the payment for {{extraPhotosCount}} extra photos (€{{totalCost}}).",
+    "selectionDescription": "We need your email address to save your photo selection.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "your.email@example.com",
+    "backButton": "Back",
+    "processingButton": "Processing...",
+    "continueToPaymentButton": "Continue to Payment",
+    "saveSelectionButton": "Save Selection",
+    "emailRequired": "Email required",
+    "emailRequiredDescription": "Please enter your email address to proceed.",
+    "invalidEmail": "Invalid email",
+    "invalidEmailDescription": "Please enter a valid email address.",
+    "error": "Error",
+    "errorDescription": "Failed to process your request. Please try again."
+  },
+  "clientSelectionCard": {
+    "photoCount_one": "{{count}} photo",
+    "photoCount_other": "{{count}} photos",
+    "lastSelected": "Last selected: {{date}}",
+    "gallery": "Gallery: {{galleryName}}",
+    "downloadButton": "Download Photos",
+    "downloadingButton": "Downloading...",
+    "paymentInfo": "Payment Information",
+    "extraPhotos": "Extra photos: {{count}}",
+    "amountPaid": "Amount paid: €{{amount}}"
+  },
+  "adminSidebar": {
+    "dashboard": "Dashboard",
+    "galleries": "Galleries",
+    "photoSelections": "Photo Selections"
+  },
+  "clientInfoForm": {
+    "title": "Your Information",
+    "emailLabel": "Email Address *",
+    "emailPlaceholder": "your.email@example.com",
+    "messageLabel": "Message (optional)",
+    "messagePlaceholder": "Any special requests or notes..."
+  },
+  "indexPage": {
+    "loading": "Loading..."
   }
 }

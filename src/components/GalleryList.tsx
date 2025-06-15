@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 interface Gallery {
   id: string;
@@ -31,9 +32,10 @@ const GalleryList: React.FC<GalleryListProps> = ({
   onGalleryDeleted
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const deleteGallery = async (galleryId: string, galleryName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the gallery "${galleryName}" and all its photos? This action cannot be undone.`)) {
+    if (!window.confirm(t('galleryList.deleteConfirmation', { galleryName }))) {
       return;
     }
 
@@ -65,15 +67,15 @@ const GalleryList: React.FC<GalleryListProps> = ({
       if (galleryError) throw galleryError;
 
       toast({
-        title: "Gallery deleted",
-        description: `Gallery "${galleryName}" and all its photos have been deleted.`,
+        title: t('galleryList.galleryDeleted'),
+        description: t('galleryList.galleryDeletedDescription', { galleryName }),
       });
 
       onGalleryDeleted();
     } catch (error) {
       toast({
-        title: "Delete failed",
-        description: "Failed to delete gallery",
+        title: t('galleryList.deleteFailed'),
+        description: t('galleryList.deleteFailedDescription'),
         variant: "destructive"
       });
     }
@@ -82,14 +84,14 @@ const GalleryList: React.FC<GalleryListProps> = ({
   const copyAccessCode = (accessCode: string) => {
     navigator.clipboard.writeText(accessCode);
     toast({
-      title: "Access code copied",
-      description: "Access code copied to clipboard.",
+      title: t('galleryList.accessCodeCopied'),
+      description: t('galleryList.accessCodeCopiedDescription'),
     });
   };
 
   return (
     <Card className="p-6 bg-white/5 border-white/10">
-      <h2 className="text-xl font-semibold mb-4">Your Galleries ({galleries.length})</h2>
+      <h2 className="text-xl font-semibold mb-4">{t('galleryList.title', { count: galleries.length })}</h2>
       <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
         {galleries.map((gallery) => (
           <motion.div
@@ -104,7 +106,7 @@ const GalleryList: React.FC<GalleryListProps> = ({
           >
             <h3 className="font-medium">{gallery.name}</h3>
             <p className="text-sm text-slate-400">
-              {gallery.photo_count} photos • {new Date(gallery.created_at).toLocaleDateString()}
+              {t('galleryList.photoCount', { count: gallery.photo_count || 0 })} • {new Date(gallery.created_at).toLocaleDateString()}
             </p>
             {gallery.client_name && (
               <p className="text-sm text-blue-300">{gallery.client_name}</p>

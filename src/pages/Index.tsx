@@ -10,10 +10,12 @@ import ClientAccessForm from '@/components/ClientAccessForm';
 import PaymentSuccess from '@/components/PaymentSuccess';
 import PaymentCancelled from '@/components/PaymentCancelled';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const Index = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Get initial session
@@ -33,7 +35,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">{t('indexPage.loading')}</div>
       </div>
     );
   }

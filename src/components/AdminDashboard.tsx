@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import GalleriesTab from './GalleriesTab';
 import PhotoSelectionsTab from './PhotoSelectionsTab';
 import SettingsTab from './SettingsTab';
+import { useTranslation } from 'react-i18next';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -14,11 +15,12 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('galleries');
+  const { t } = useTranslation();
 
   const tabs = [
-    { id: 'galleries', label: 'Galleries', icon: Image },
-    { id: 'selections', label: 'Photo Selections', icon: Heart },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'galleries', label: t('adminDashboard.galleriesTab'), icon: Image },
+    { id: 'selections', label: t('adminDashboard.selectionsTab'), icon: Heart },
+    { id: 'settings', label: t('adminDashboard.settingsTab'), icon: Settings },
   ];
 
   const renderTabContent = () => {
@@ -46,9 +48,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Gallery Admin
+                {t('adminDashboard.title')}
               </h1>
-              <p className="text-slate-300 text-sm">Manage your photo galleries and client selections</p>
+              <p className="text-slate-300 text-sm">{t('adminDashboard.subtitle')}</p>
             </div>
             
             <Button
@@ -57,7 +59,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               className="border-slate-600 text-slate-300 hover:bg-slate-700"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              {t('adminDashboard.signOutButton')}
             </Button>
           </div>
         </div>

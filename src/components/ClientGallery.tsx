@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -12,10 +13,12 @@ import PhotoLightbox from './PhotoLightbox';
 import PhotoPreviewModal from './PhotoPreviewModal';
 import SelectionModal from './SelectionModal';
 import FullscreenPhotoModal from './FullscreenPhotoModal';
+import { useTranslation } from 'react-i18next';
 
 const ClientGallery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showSelectionModal, setShowSelectionModal] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
@@ -31,8 +34,8 @@ const ClientGallery = () => {
   const handleSendSelection = () => {
     if (selectedPhotos.size === 0) {
       toast({
-        title: "No photos selected",
-        description: "Please select at least one photo before sending.",
+        title: t('clientGallery.noPhotosSelected'),
+        description: t('clientGallery.noPhotosSelectedDescription'),
         variant: "destructive"
       });
       return;
@@ -82,7 +85,7 @@ const ClientGallery = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
-          <div className="text-xl">Loading gallery...</div>
+          <div className="text-xl">{t('clientGallery.loading')}</div>
         </div>
       </div>
     );
@@ -92,10 +95,10 @@ const ClientGallery = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
-          <h1 className="text-xl md:text-2xl font-bold mb-4">Gallery Not Found</h1>
+          <h1 className="text-xl md:text-2xl font-bold mb-4">{t('clientGallery.notFound')}</h1>
           <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Access Form
+            {t('clientGallery.backButton')}
           </Button>
         </div>
       </div>

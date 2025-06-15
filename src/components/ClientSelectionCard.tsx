@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import PhotoThumbnail from './PhotoThumbnail';
 import { ClientSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
 import { usePhotoDownload } from '@/hooks/usePhotoDownload';
+import { useTranslation } from 'react-i18next';
 
 interface ClientSelectionCardProps {
   clientGroup: ClientSelections;
@@ -22,6 +23,7 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
 }) => {
   const { downloadingClient, downloadClientSelections } = usePhotoDownload();
   const isDownloading = downloadingClient === clientGroup.clientName;
+  const { t } = useTranslation();
 
   const handleDownload = () => {
     downloadClientSelections(clientGroup, true);
@@ -42,7 +44,7 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
                 <User className="w-5 h-5 text-blue-400" />
                 <h3 className="text-xl font-bold text-white">{clientGroup.clientName}</h3>
                 <Badge variant="secondary" className="bg-slate-700 text-slate-300">
-                  {clientGroup.selections.length} photo{clientGroup.selections.length !== 1 ? 's' : ''}
+                  {t('clientSelectionCard.photoCount', { count: clientGroup.selections.length })}
                 </Badge>
               </div>
               
@@ -53,13 +55,13 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  <span>Gallery: {clientGroup.galleryName}</span>
+                  <span>{t('clientSelectionCard.gallery', { galleryName: clientGroup.galleryName })}</span>
                 </div>
                 {clientGroup.selections.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      Last selected: {new Date(clientGroup.selections[0].selected_at).toLocaleDateString()}
+                      {t('clientSelectionCard.lastSelected', { date: new Date(clientGroup.selections[0].selected_at).toLocaleDateString() })}
                     </span>
                   </div>
                 )}
@@ -74,7 +76,7 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? 'Downloading...' : 'Download Photos'}
+              {isDownloading ? t('clientSelectionCard.downloadingButton') : t('clientSelectionCard.downloadButton')}
             </Button>
           </div>
 
@@ -83,11 +85,11 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
             <div className="bg-slate-700/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <CreditCard className="w-4 h-4 text-green-400" />
-                <span className="text-sm font-medium text-white">Payment Information</span>
+                <span className="text-sm font-medium text-white">{t('clientSelectionCard.paymentInfo')}</span>
               </div>
               <div className="text-sm text-slate-300">
-                <p>Extra photos: {clientGroup.paymentInfo.extraPhotosCount}</p>
-                <p>Amount paid: €{(clientGroup.paymentInfo.amountPaid / 100).toFixed(2)}</p>
+                <p>{t('clientSelectionCard.extraPhotos', { count: clientGroup.paymentInfo.extraPhotosCount })}</p>
+                <p>{t('clientSelectionCard.amountPaid', { amount: (clientGroup.paymentInfo.amountPaid / 100).toFixed(2) })}</p>
               </div>
             </div>
           )}

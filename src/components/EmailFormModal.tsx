@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, CreditCard, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface EmailFormModalProps {
   isOpen: boolean;
@@ -25,14 +26,15 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
   const [tempClientEmail, setTempClientEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const isPaymentRequired = extraPhotosCount > 0;
 
   const handleEmailSubmit = async () => {
     if (!tempClientEmail || tempClientEmail.trim() === '') {
       toast({
-        title: "Email required",
-        description: "Please enter your email address to proceed.",
+        title: t('emailFormModal.emailRequired'),
+        description: t('emailFormModal.emailRequiredDescription'),
         variant: "destructive"
       });
       return;
@@ -40,8 +42,8 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tempClientEmail.trim())) {
       toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
+        title: t('emailFormModal.invalidEmail'),
+        description: t('emailFormModal.invalidEmailDescription'),
         variant: "destructive"
       });
       return;
@@ -53,8 +55,8 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
     } catch (error) {
       console.error('Error submitting email:', error);
       toast({
-        title: "Error",
-        description: "Failed to process your request. Please try again.",
+        title: t('emailFormModal.error'),
+        description: t('emailFormModal.errorDescription'),
         variant: "destructive"
       });
     } finally {
@@ -70,12 +72,12 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
             {isPaymentRequired ? (
               <>
                 <Mail className="w-5 h-5 text-blue-500" />
-                <span>Email Required for Payment</span>
+                <span>{t('emailFormModal.emailForPaymentTitle')}</span>
               </>
             ) : (
               <>
                 <Heart className="w-5 h-5 text-red-500" />
-                <span>Email Required</span>
+                <span>{t('emailFormModal.emailRequiredTitle')}</span>
               </>
             )}
           </DialogTitle>
@@ -84,20 +86,20 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
         <div className="space-y-4">
           <div className={`p-4 rounded-lg ${isPaymentRequired ? 'bg-blue-50' : 'bg-green-50'}`}>
             <p className={`text-sm ${isPaymentRequired ? 'text-blue-800' : 'text-green-800'}`}>
-              {isPaymentRequired ? (
-                <>We need your email address to process the payment for {extraPhotosCount} extra photo{extraPhotosCount > 1 ? 's' : ''} (€{totalCost.toFixed(2)}).</>
-              ) : (
-                <>We need your email address to save your photo selection.</>
-              )}
+              {isPaymentRequired ? 
+                t('emailFormModal.paymentDescription', { count: extraPhotosCount, extraPhotosCount: extraPhotosCount, totalCost: totalCost.toFixed(2) })
+               : 
+                t('emailFormModal.selectionDescription')
+              }
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client-email">Email Address</Label>
+            <Label htmlFor="client-email">{t('emailFormModal.emailLabel')}</Label>
             <Input
               id="client-email"
               type="email"
-              placeholder="your.email@example.com"
+              placeholder={t('emailFormModal.emailPlaceholder')}
               value={tempClientEmail}
               onChange={(e) => setTempClientEmail(e.target.value)}
               className="w-full"
@@ -107,7 +109,7 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
 
           <div className="flex justify-between items-center pt-4">
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Back
+              {t('emailFormModal.backButton')}
             </Button>
             <Button 
               onClick={handleEmailSubmit}
@@ -115,16 +117,16 @@ const EmailFormModal: React.FC<EmailFormModalProps> = ({
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                "Processing..."
+                t('emailFormModal.processingButton')
               ) : isPaymentRequired ? (
                 <>
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Continue to Payment
+                  {t('emailFormModal.continueToPaymentButton')}
                 </>
               ) : (
                 <>
                   <Heart className="w-4 h-4 mr-2" />
-                  Save Selection
+                  {t('emailFormModal.saveSelectionButton')}
                 </>
               )}
             </Button>

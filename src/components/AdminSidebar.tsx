@@ -11,6 +11,7 @@ import {
   SidebarMenuItem 
 } from '@/components/ui/sidebar';
 import { FolderOpen, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -18,14 +19,16 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChange }) => {
+  const { t } = useTranslation();
+
   const menuItems = [
     {
-      title: "Galleries",
+      title: t('adminSidebar.galleries'),
       value: "galleries",
       icon: FolderOpen,
     },
     {
-      title: "Photo Selections",
+      title: t('adminSidebar.photoSelections'),
       value: "selections",
       icon: Heart,
     },
@@ -35,7 +38,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChange }) =
     <Sidebar className="border-r border-slate-700">
       <SidebarContent className="bg-slate-800 px-6 py-8">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-300 mb-6 text-lg font-medium">Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-300 mb-6 text-lg font-medium">{t('adminSidebar.dashboard')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-3">
               {menuItems.map((item) => (
