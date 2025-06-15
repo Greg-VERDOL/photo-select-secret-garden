@@ -115,8 +115,6 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
               src={getPhotoUrl(photo.storage_path)}
               alt={photo.title || photo.filename}
               className="block"
-              showWatermark={true} // Always show watermark for client modal
-              isAdminView={false} // Ensure watermark is visible (not admin)
             />
           </div>
         </div>
@@ -126,4 +124,3 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
 };
 
 export default FullscreenPhotoModal;
-
