@@ -74,8 +74,7 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !src || !settingsLoaded) return;
+    if (!canvas || !src || !settingsLoaded) return;
 
     let img: HTMLImageElement;
 
@@ -85,9 +84,36 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // --- Core logic update starts here ---
+      // When fitContainer is false, draw image at its natural size (preview modal), watermark is locked to the image itself.
+      if (!fitContainer) {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
+
+        if (shouldShowWatermark) {
+          addWatermarks(ctx, img.naturalWidth, img.naturalHeight, {
+            watermarkText,
+            centerWatermarkText,
+            watermarkStyle,
+          });
+          addNoisePattern(ctx, img.naturalWidth, img.naturalHeight);
+        }
+        setIsLoading(false);
+        return;
+      }
+      // --- End special modal logic ---
+
+      // Fallback for fitContainer=true (grid cells): stretch to fill container
+      const container = containerRef.current;
+      if (!container) return;
+
       const containerWidth = container.offsetWidth;
       const containerHeight = container.offsetHeight;
-      
+
       if (containerWidth === 0 || containerHeight === 0) return;
 
       canvas.width = containerWidth;
@@ -95,21 +121,15 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      let scale = 1;
-      if (fitContainer) { // object-cover
-        scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-      } else { // object-contain
-        scale = Math.min(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-      }
-      
+      let scale = Math.max(containerWidth / img.naturalWidth, containerHeight / img.naturalHeight);
       const scaledWidth = img.naturalWidth * scale;
       const scaledHeight = img.naturalHeight * scale;
-      
+
       const x = (canvas.width - scaledWidth) / 2;
       const y = (canvas.height - scaledHeight) / 2;
 
       ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-      
+
       if (shouldShowWatermark) {
         addWatermarks(ctx, canvas.width, canvas.height, {
           watermarkText,
@@ -131,28 +151,57 @@ const WatermarkedImage: React.FC<WatermarkedImageProps> = ({
       console.error(`Failed to load image for canvas: ${src}`);
     };
 
-    const resizeObserver = new ResizeObserver(draw);
-    resizeObserver.observe(container);
+    // Only observe for resize if fitContainer is true (for grid thumbnails, not fullscreen)
+    let resizeObserver: ResizeObserver | undefined;
+    if (fitContainer) {
+      const container = containerRef.current;
+      if (container) {
+        resizeObserver = new ResizeObserver(draw);
+        resizeObserver.observe(container);
+      }
+    }
 
     return () => {
-      resizeObserver.disconnect();
+      if (resizeObserver && containerRef.current) {
+        resizeObserver.disconnect();
+      }
     };
   }, [src, settingsLoaded, fitContainer, shouldShowWatermark, watermarkText, watermarkStyle, centerWatermarkText]);
 
   return (
-    <div ref={containerRef} className={cn("relative w-full h-full", className)} onClick={onClick}>
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative overflow-auto w-full h-full",
+        !fitContainer && "flex justify-center items-center", // Center modal image
+        className
+      )}
+      style={
+        !fitContainer
+          ? { maxWidth: '100%', maxHeight: '100%', minHeight: '1px' }
+          : undefined
+      }
+      onClick={onClick}
+      tabIndex={0}
+    >
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-800/20">
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-800/20 z-10">
           <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       <canvas
         ref={canvasRef}
         className={cn(
-          "w-full h-full transition-opacity duration-300",
+          fitContainer
+            ? "w-full h-full transition-opacity duration-300"
+            : "block transition-opacity duration-300", // Modal: show at real image size
           isLoading ? "opacity-0" : "opacity-100"
         )}
-        style={{ userSelect: 'none' }}
+        style={
+          !fitContainer
+            ? { maxWidth: '100%', maxHeight: '100%', margin: 'auto', display: 'block', background: '#141414' }
+            : { userSelect: 'none' }
+        }
         onContextMenu={(e) => e.preventDefault()}
         aria-label={alt}
       />
