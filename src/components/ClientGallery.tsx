@@ -35,17 +35,19 @@ const ClientGallery = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white">
-        <div className="text-xl">Loading gallery...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
+        <div className="text-center">
+          <div className="text-xl">Loading gallery...</div>
+        </div>
       </div>
     );
   }
 
   if (!gallery) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center text-white p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Gallery Not Found</h1>
+          <h1 className="text-xl md:text-2xl font-bold mb-4">Gallery Not Found</h1>
           <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Access Form
@@ -63,7 +65,7 @@ const ClientGallery = () => {
         onSendSelection={handleSendSelection}
       />
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-3 md:p-6">
         <PhotoGalleryGrid
           photos={photos}
           selectedPhotos={selectedPhotos}

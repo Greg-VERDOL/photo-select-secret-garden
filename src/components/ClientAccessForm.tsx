@@ -59,18 +59,18 @@ const ClientAccessForm: React.FC = () => {
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-md"
+        className="w-full max-w-sm md:max-w-md"
       >
-        <Card className="p-8 bg-white/10 border-white/20 backdrop-blur-sm">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600/20 rounded-full mb-4">
-              <Key className="w-8 h-8 text-blue-400" />
+        <Card className="p-6 md:p-8 bg-white/10 border-white/20 backdrop-blur-sm">
+          <div className="text-center mb-6 md:mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-blue-600/20 rounded-full mb-4">
+              <Key className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Access Your Gallery</h1>
-            <p className="text-slate-300 mt-2">Enter your access code to view your photos</p>
+            <h1 className="text-xl md:text-2xl font-bold text-white">Access Your Gallery</h1>
+            <p className="text-slate-300 mt-2 text-sm md:text-base">Enter your access code to view your photos</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Access Code
@@ -80,7 +80,7 @@ const ClientAccessForm: React.FC = () => {
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                 placeholder="Enter your 8-character code"
-                className="bg-slate-700/50 border-slate-600 text-white text-center text-lg tracking-widest"
+                className="bg-slate-700/50 border-slate-600 text-white text-center text-base md:text-lg tracking-widest h-12 md:h-14"
                 maxLength={8}
                 required
               />
@@ -89,15 +89,15 @@ const ClientAccessForm: React.FC = () => {
             <Button
               type="submit"
               disabled={isLoading || accessCode.length !== 8}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 h-12 md:h-14 text-base font-medium"
             >
               {isLoading ? 'Verifying...' : 'Access Gallery'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-slate-400">
+          <div className="mt-6 md:mt-8 text-center">
+            <p className="text-xs md:text-sm text-slate-400">
               Don't have an access code?{' '}
               <span className="text-blue-400">Contact your photographer</span>
             </p>
