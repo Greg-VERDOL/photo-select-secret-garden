@@ -1,31 +1,23 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Download, CreditCard, User, Mail, Calendar, Eye, ShieldOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CreditCard, User, Mail, Calendar, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import PhotoThumbnail from './PhotoThumbnail';
-import PaymentInfo from './PaymentInfo';
 import { ClientSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
 
 interface ClientSelectionCardProps {
   clientGroup: ClientSelections;
   getPhotoUrl: (storagePath: string) => string;
   onPhotoClick: (selection: PhotoSelection) => void;
-  onDownloadAll: (clientGroup: ClientSelections, unwatermarked?: boolean) => void;
-  downloadingClient: string | null;
 }
 
 const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
   clientGroup,
   getPhotoUrl,
-  onPhotoClick,
-  onDownloadAll,
-  downloadingClient
+  onPhotoClick
 }) => {
-  const isDownloading = downloadingClient === clientGroup.clientName;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -63,27 +55,6 @@ const ClientSelectionCard: React.FC<ClientSelectionCardProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={() => onDownloadAll(clientGroup, false)}
-                disabled={isDownloading}
-                variant="outline"
-                className="border-slate-600 text-slate-300 hover:bg-slate-700"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {isDownloading ? 'Downloading...' : 'Download (Watermarked)'}
-              </Button>
-              
-              <Button
-                onClick={() => onDownloadAll(clientGroup, true)}
-                disabled={isDownloading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <ShieldOff className="w-4 h-4 mr-2" />
-                {isDownloading ? 'Downloading...' : 'Download Original'}
-              </Button>
             </div>
           </div>
 

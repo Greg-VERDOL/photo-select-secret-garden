@@ -1,28 +1,28 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Heart, CreditCard } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { X, Send, Download, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useParams } from 'react-router-dom';
-import EmailFormModal from './EmailFormModal';
-import PricingInfo from './PricingInfo';
+import { supabase } from '@/integrations/supabase/client';
 import SelectedPhotosGrid from './SelectedPhotosGrid';
-import EmptySelectionState from './EmptySelectionState';
+import PricingInfo from './PricingInfo';
 
 interface Photo {
   id: string;
   filename: string;
+  title?: string;
   storage_path: string;
 }
 
 interface SelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  photos: Photo[];
   selectedPhotos: string[];
+  photos: Photo[];
   onPhotoToggle: (photoId: string) => void;
   galleryId: string;
   clientEmail: string;
@@ -33,294 +33,232 @@ interface SelectionModalProps {
 const SelectionModal: React.FC<SelectionModalProps> = ({
   isOpen,
   onClose,
-  photos,
   selectedPhotos,
+  photos,
   onPhotoToggle,
   galleryId,
   clientEmail,
   freePhotoLimit,
-  getPhotoUrl,
+  getPhotoUrl
 }) => {
-  const { accessCode } = useParams<{ accessCode: string }>();
-  const [pricePerPhoto, setPricePerPhoto] = useState(5.00);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState(clientEmail);
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchPricing();
-  }, []);
-
-  const fetchPricing = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'price_per_extra_photo_cents')
-        .single();
-
-      if (error) throw error;
-      setPricePerPhoto(parseInt(data.value) / 100);
-    } catch (error) {
-      console.error('Error fetching pricing:', error);
-    }
-  };
-
+  const selectedPhotoObjects = photos.filter(photo => selectedPhotos.includes(photo.id));
   const extraPhotosCount = Math.max(0, selectedPhotos.length - freePhotoLimit);
-  const totalCost = extraPhotosCount * pricePerPhoto;
-  const needsPayment = extraPhotosCount > 0;
-  const needsEmail = (!clientEmail || clientEmail.trim() === '');
+  const totalCost = extraPhotosCount * 3; // €3 per extra photo
 
-  const clearSavedSelections = () => {
-    if (accessCode) {
-      localStorage.removeItem(`gallery_selections_${accessCode}`);
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      for (const photo of selectedPhotoObjects) {
+        try {
+          const photoUrl = getPhotoUrl(photo.storage_path);
+          const response = await fetch(photoUrl);
+          const blob = await response.blob();
+          const filename = photo.title || photo.filename;
+          const extension = filename.includes('.') ? '' : '.jpg';
+          zip.file(`${filename}${extension}`, blob);
+        } catch (error) {
+          console.error(`Failed to download ${photo.filename}:`, error);
+        }
+      }
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `selected-photos.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Complete",
+        description: `Downloaded ${selectedPhotos.length} photos`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download selected photos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (needsEmail) {
-      setShowEmailForm(true);
-      return;
-    }
-
-    if (needsPayment) {
-      await handlePayment();
-    } else {
-      await saveSelections();
-    }
-  };
-
-  const handleEmailSubmit = async (email: string) => {
-    setShowEmailForm(false);
-    if (needsPayment) {
-      await handlePayment(email);
-    } else {
-      await saveSelections(email);
-    }
-  };
-
-  const handlePayment = async (emailToUse?: string) => {
-    setIsProcessingPayment(true);
-    const paymentEmail = emailToUse || clientEmail;
-    
-    if (!paymentEmail || paymentEmail.trim() === '') {
+    if (!email.trim()) {
       toast({
         title: "Email required",
-        description: "Email address is required for payment processing.",
-        variant: "destructive"
-      });
-      setIsProcessingPayment(false);
-      return;
-    }
-    
-    try {
-      console.log('Starting payment process for:', { galleryId, paymentEmail, selectedPhotos: selectedPhotos.length });
-      
-      // Store pending selections in localStorage before payment
-      const pendingSelections = {
-        galleryId,
-        clientEmail: paymentEmail.trim(),
-        selectedPhotos: selectedPhotos,
-        timestamp: Date.now(),
-        needsPayment: true,
-        extraPhotosCount,
-        totalCost
-      };
-      
-      console.log('Storing pending selections for payment:', pendingSelections);
-      localStorage.setItem('pendingSelections', JSON.stringify(pendingSelections));
-      
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          galleryId,
-          clientEmail: paymentEmail.trim(),
-          extraPhotosCount
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        console.log('Payment URL created, redirecting to:', data.url);
-        // Navigate in same tab instead of opening new tab
-        window.location.href = data.url;
-      } else {
-        throw new Error('No payment URL received');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      // Clear pending selections on error
-      localStorage.removeItem('pendingSelections');
-      toast({
-        title: "Payment failed",
-        description: error.message || "Failed to create payment session",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
-
-  const saveSelections = async (emailToUse?: string) => {
-    const finalEmail = emailToUse || clientEmail;
-    
-    if (!finalEmail || finalEmail.trim() === '') {
-      toast({
-        title: "Email required",
-        description: "Email address is required to save selections.",
+        description: "Please enter your email address",
         variant: "destructive"
       });
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      console.log('Saving free selections:', { galleryId, finalEmail, selectedPhotos });
-      
-      // First, delete existing selections for this client and gallery to avoid duplicates
-      const { error: deleteError } = await supabase
+      // Save photo selections
+      const selections = selectedPhotos.map(photoId => ({
+        photo_id: photoId,
+        gallery_id: galleryId,
+        client_email: email.trim()
+      }));
+
+      const { error: selectionsError } = await supabase
         .from('photo_selections')
-        .delete()
-        .eq('gallery_id', galleryId)
-        .eq('client_email', finalEmail.trim());
+        .upsert(selections, { 
+          onConflict: 'photo_id,gallery_id,client_email',
+          ignoreDuplicates: false 
+        });
 
-      if (deleteError) {
-        console.error('Error deleting existing selections:', deleteError);
-        // Continue anyway, as this might just mean no existing selections
-      }
+      if (selectionsError) throw selectionsError;
 
-      // Insert new selections only if there are photos selected
-      if (selectedPhotos.length > 0) {
-        const selections = selectedPhotos.map(photoId => ({
-          gallery_id: galleryId,
-          photo_id: photoId,
-          client_email: finalEmail.trim(),
-        }));
+      // Handle payment if needed
+      if (extraPhotosCount > 0) {
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: {
+            galleryId,
+            clientEmail: email.trim(),
+            extraPhotosCount,
+            totalAmount: totalCost * 100, // Convert to cents
+          }
+        });
 
-        console.log('Inserting new selections:', selections);
-        const { error: insertError } = await supabase
-          .from('photo_selections')
-          .insert(selections);
+        if (error) throw error;
 
-        if (insertError) {
-          console.error('Error inserting selections:', insertError);
-          throw insertError;
+        // Redirect to Stripe Checkout
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
         }
-
-        console.log('Successfully saved selections:', selections.length);
       }
-
-      // Store successful completion data for potential future reference
-      const completedSelections = {
-        galleryId,
-        clientEmail: finalEmail.trim(),
-        selectedPhotos: selectedPhotos,
-        timestamp: Date.now(),
-        needsPayment: false,
-        completed: true
-      };
-      
-      localStorage.setItem('completedSelections', JSON.stringify(completedSelections));
-
-      // Clear the saved selections since they're now submitted
-      clearSavedSelections();
 
       toast({
-        title: "Selections saved!",
-        description: `You've selected ${selectedPhotos.length} photo(s).`,
+        title: "Selection saved!",
+        description: extraPhotosCount > 0 
+          ? "Please complete payment to finalize your selection"
+          : "Your photo selection has been saved successfully",
       });
 
       onClose();
     } catch (error) {
-      console.error('Error saving selections:', error);
+      console.error('Error saving selection:', error);
       toast({
-        title: "Error saving selections",
-        description: "Failed to save your photo selections. Please try again.",
+        title: "Error",
+        description: "Failed to save your selection. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (showEmailForm) {
-    return (
-      <EmailFormModal
-        isOpen={isOpen}
-        onClose={() => setShowEmailForm(false)}
-        onEmailSubmit={handleEmailSubmit}
-        extraPhotosCount={extraPhotosCount}
-        totalCost={totalCost}
-      />
-    );
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-800 border-slate-600 text-white overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Heart className="w-5 h-5 text-red-500" />
-            <span>Your Photo Selection</span>
-            <Badge variant="secondary">{selectedPhotos.length} selected</Badge>
+          <DialogTitle className="flex justify-between items-center text-xl">
+            Review Your Selection ({selectedPhotos.length} photos)
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onClose}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto">
+          {/* Selected Photos Grid */}
+          <SelectedPhotosGrid
+            selectedPhotos={selectedPhotoObjects}
+            onPhotoToggle={onPhotoToggle}
+            getPhotoUrl={getPhotoUrl}
+          />
+
+          {/* Pricing Information */}
           <PricingInfo
+            selectedCount={selectedPhotos.length}
             freePhotoLimit={freePhotoLimit}
-            pricePerPhoto={pricePerPhoto}
-            selectedPhotosCount={selectedPhotos.length}
             extraPhotosCount={extraPhotosCount}
             totalCost={totalCost}
           />
 
-          {selectedPhotos.length === 0 ? (
-            <EmptySelectionState />
-          ) : (
-            <SelectedPhotosGrid
-              photos={photos}
-              selectedPhotos={selectedPhotos}
-              onPhotoToggle={onPhotoToggle}
-              getPhotoUrl={getPhotoUrl}
-            />
-          )}
+          {/* Client Information Form */}
+          <div className="space-y-4 bg-slate-700/30 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold">Your Information</h3>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <Label htmlFor="email" className="text-slate-300">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="bg-slate-700 border-slate-600 text-white"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="message" className="text-slate-300">Message (optional)</Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Any special requests or notes..."
+                  className="bg-slate-700 border-slate-600 text-white"
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="text-sm text-gray-600">
-              {needsPayment && (
-                <span className="text-red-600 font-semibold">
-                  Total cost: €{totalCost.toFixed(2)}
-                </span>
-              )}
-              {!needsPayment && selectedPhotos.length > 0 && (
-                <span className="text-green-600 font-semibold">
-                  All photos are free!
-                </span>
-              )}
-            </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-600">
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading || selectedPhotos.length === 0}
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isDownloading ? 'Downloading...' : 'Download Photos'}
+            </Button>
             
-            <div className="space-x-3">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit}
-                disabled={selectedPhotos.length === 0 || isProcessingPayment}
-                className={needsPayment ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}
-              >
-                {isProcessingPayment ? (
-                  "Processing..."
-                ) : needsEmail ? (
-                  needsPayment ? "Enter Email for Payment" : "Enter Email to Save"
-                ) : needsPayment ? (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay €{totalCost.toFixed(2)}
-                  </>
-                ) : (
-                  "Confirm Selection"
-                )}
-              </Button>
-            </div>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || selectedPhotos.length === 0}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              {extraPhotosCount > 0 ? (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  {isSubmitting ? 'Processing...' : `Pay €${totalCost} & Send Selection`}
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {isSubmitting ? 'Sending...' : 'Send Selection'}
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>

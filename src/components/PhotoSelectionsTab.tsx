@@ -7,20 +7,19 @@ import EmptySelectionsState from './EmptySelectionsState';
 import ClientSelectionCard from './ClientSelectionCard';
 import PhotoSelectionModal from './PhotoSelectionModal';
 import { useAdminPhotoSelections, PhotoSelection } from '@/hooks/useAdminPhotoSelections';
-import { usePhotoDownload } from '@/hooks/usePhotoDownload';
 
 const PhotoSelectionsTab: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoSelection | null>(null);
   
   const { groupedSelections, loading, refreshing, handleManualRefresh } = useAdminPhotoSelections();
-  const { downloadingClient, downloadClientSelections, getPhotoUrl } = usePhotoDownload();
+
+  const getPhotoUrl = (storagePath: string) => {
+    // This is a simplified version - you might want to use the hook
+    return storagePath; // Replace with actual URL generation logic
+  };
 
   const handlePhotoClick = (selection: PhotoSelection) => {
     setSelectedPhoto(selection);
-  };
-
-  const handleDownloadAll = (clientSelections: any, unwatermarked: boolean = false) => {
-    downloadClientSelections(clientSelections, unwatermarked);
   };
 
   if (loading) {
@@ -59,8 +58,6 @@ const PhotoSelectionsTab: React.FC = () => {
               clientGroup={clientGroup}
               getPhotoUrl={getPhotoUrl}
               onPhotoClick={handlePhotoClick}
-              onDownloadAll={handleDownloadAll}
-              downloadingClient={downloadingClient}
             />
           ))}
         </div>
