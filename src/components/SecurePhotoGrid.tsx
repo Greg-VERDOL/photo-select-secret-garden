@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Square, CheckSquare, X } from 'lucide-react';
@@ -41,39 +42,6 @@ const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
   logDownloadAttempt
 }) => {
   const { t } = useTranslation();
-  const [watermarkSettings, setWatermarkSettings] = useState({
-    watermarkText: '© PHOTO STUDIO',
-    watermarkStyle: 'corners',
-    centerWatermarkText: 'PROOF'
-  });
-
-  useEffect(() => {
-    fetchWatermarkSettings();
-  }, []);
-
-  const fetchWatermarkSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('key, value')
-        .in('key', ['watermark_text', 'watermark_style', 'center_watermark_text']);
-
-      if (error) return;
-
-      const settings = data.reduce((acc, setting) => {
-        acc[setting.key] = setting.value;
-        return acc;
-      }, {} as Record<string, string>);
-
-      setWatermarkSettings({
-        watermarkText: settings.watermark_text || '© PHOTO STUDIO',
-        watermarkStyle: settings.watermark_style || 'corners',
-        centerWatermarkText: settings.center_watermark_text || 'PROOF'
-      });
-    } catch (error) {
-      console.error('Error fetching watermark settings:', error);
-    }
-  };
 
   const allSelected = photos.length > 0 && photos.every(photo => selectedPhotos.has(photo.id));
 
@@ -167,12 +135,6 @@ const SecurePhotoGrid: React.FC<SecurePhotoGridProps> = ({
                   clientEmail={clientEmail}
                   className="w-full h-full object-cover"
                   onClick={() => onPhotoClick(photo)}
-                  watermarkText={watermarkSettings.watermarkText}
-                  centerWatermarkText={watermarkSettings.centerWatermarkText}
-                  watermarkStyle={watermarkSettings.watermarkStyle}
-                  isSessionValid={isSessionValid}
-                  generateSecureImageUrl={generateSecureImageUrl}
-                  logDownloadAttempt={logDownloadAttempt}
                 />
               </div>
 
