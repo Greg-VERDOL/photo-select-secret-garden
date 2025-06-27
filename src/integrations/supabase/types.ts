@@ -203,6 +203,7 @@ export type Database = {
         Row: {
           access_token: string
           accessed_at: string | null
+          chunk_id: string | null
           client_email: string
           expires_at: string
           gallery_id: string | null
@@ -215,6 +216,7 @@ export type Database = {
         Insert: {
           access_token: string
           accessed_at?: string | null
+          chunk_id?: string | null
           client_email: string
           expires_at: string
           gallery_id?: string | null
@@ -227,6 +229,7 @@ export type Database = {
         Update: {
           access_token?: string
           accessed_at?: string | null
+          chunk_id?: string | null
           client_email?: string
           expires_at?: string
           gallery_id?: string | null
@@ -237,6 +240,13 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "image_access_logs_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "image_chunks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "image_access_logs_gallery_id_fkey"
             columns: ["gallery_id"]
@@ -252,6 +262,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      image_chunks: {
+        Row: {
+          accessed_at: string | null
+          chunk_index: number
+          chunk_token: string
+          client_email: string
+          created_at: string | null
+          expires_at: string
+          gallery_id: string
+          id: string
+          photo_id: string
+        }
+        Insert: {
+          accessed_at?: string | null
+          chunk_index: number
+          chunk_token: string
+          client_email: string
+          created_at?: string | null
+          expires_at: string
+          gallery_id: string
+          id?: string
+          photo_id: string
+        }
+        Update: {
+          accessed_at?: string | null
+          chunk_index?: number
+          chunk_token?: string
+          client_email?: string
+          created_at?: string | null
+          expires_at?: string
+          gallery_id?: string
+          id?: string
+          photo_id?: string
+        }
+        Relationships: []
       }
       payment_sessions: {
         Row: {
@@ -432,6 +478,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_chunks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_access_code: {
         Args: Record<PropertyKey, never>
         Returns: string

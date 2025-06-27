@@ -20,6 +20,8 @@ interface FullscreenPhotoModalProps {
   getPhotoUrl: (storagePath: string) => string;
   photos?: Photo[];
   onNavigate?: (direction: 'prev' | 'next') => void;
+  galleryId?: string;
+  clientEmail?: string;
 }
 
 const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
@@ -28,7 +30,9 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
   onClose,
   getPhotoUrl,
   photos = [],
-  onNavigate
+  onNavigate,
+  galleryId,
+  clientEmail
 }) => {
   const { t } = useTranslation();
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
@@ -115,6 +119,9 @@ const FullscreenPhotoModal: React.FC<FullscreenPhotoModalProps> = ({
               src={getPhotoUrl(photo.storage_path)}
               alt={photo.title || photo.filename}
               className="block"
+              photoId={photo.id}
+              galleryId={galleryId}
+              clientEmail={clientEmail}
             />
           </div>
         </div>

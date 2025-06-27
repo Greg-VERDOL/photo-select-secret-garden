@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -135,6 +136,8 @@ const ClientGallery = () => {
         getPhotoUrl={getPhotoUrl}
         photos={photos}
         onNavigate={handleNavigateFullscreen}
+        galleryId={gallery.id}
+        clientEmail={clientEmail}
       />
 
       <SelectionModal
